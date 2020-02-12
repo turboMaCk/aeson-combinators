@@ -14,12 +14,8 @@ of `FromJSON` and `ToJSON`.
 This library defines [**low overhead**](#internals) value space decoder
 and that eliminate this such type bloating.
 
-This library is not replacement for Aeson's type classes but
-rather value level extensions of them. [**Combinators and
-instances can be mixed and match**](#complimentary-usage-with-type-classes). Optionally it
-can be used to replace `FromJSON` instances "completely"
-and be used for [**elm like decoding**](#elm-style-decoding)
-or to make Aeson feel more like [**waargonaut**](https://hackage.haskell.org/package/waargonaut).
+I wrote a [blob post](https://turbomack.github.io/posts/2020-02-21-value-space-decoding-for-aeson.html)
+describing what this library attempts to solve.
 
 ## Status
 
@@ -122,10 +118,10 @@ Aeson types and functions are reused where possible.
 
 ## TODO
 
-- [ ] Decoding of Containers and Vector Types with Decoder
-- [ ] Encoding API
 - [ ] Documentation
 - [ ] Support for more GHC versions
+- [ ] Encoding API
+- [ ] Default decoders for Containers
 
 ## License
 
