@@ -1,10 +1,12 @@
 module Data.JSON.Decoder where
 
 import           Control.Monad.Fail         (MonadFail (..))
+import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
 import           Data.Aeson.Types
-import           Data.ByteString.Lazy       (ByteString)
+import qualified Data.ByteString            as B
+import qualified Data.ByteString.Lazy       as LB
 import           Data.Text
 import qualified Data.Text                  as T
 import           Prelude                    hiding (fail)
@@ -67,10 +69,45 @@ list (Decoder f) = Decoder $
   listParser f
 {-# INLINE list #-}
 
-decode :: Decoder a -> ByteString -> Maybe a
-decode (Decoder f) = Parser.decodeWith ParserI.jsonEOF (parse f)
+decode :: Decoder a -> LB.ByteString -> Maybe a
+decode (Decoder f) =
+  Parser.decodeWith ParserI.jsonEOF (parse f)
 {-# INLINE decode #-}
 
-decode' :: Decoder a -> ByteString -> Maybe a
-decode' (Decoder f) = Parser.decodeWith ParserI.jsonEOF' (parse f)
+decode' :: Decoder a -> LB.ByteString -> Maybe a
+decode' (Decoder f) =
+  Parser.decodeWith ParserI.jsonEOF' (parse f)
 {-# INLINE decode' #-}
+
+-- | Annotate an error message with a
+-- <http://goessner.net/articles/JsonPath/ JSONPath> error location.
+formatError :: JSONPath -> String -> String
+formatError path msg =
+  "Error in " ++ formatPath path ++ ": " ++ msg
+{-# INLINE formatError #-}
+
+eitherFormatError :: Either (JSONPath, String) a -> Either String a
+eitherFormatError = either (Left . uncurry formatError) Right
+{-# INLINE eitherFormatError #-}
+
+eitherDecode :: Decoder a -> LB.ByteString -> Either String a
+eitherDecode (Decoder f) =
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (AI.iparse f)
+{-# INLINE eitherDecode #-}
+
+eitherDecode' :: Decoder a -> LB.ByteString -> Either String a
+eitherDecode' (Decoder f) =
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse f)
+{-# INLINE eitherDecode' #-}
+
+-- Strict
+
+decodeStrict :: Decoder a -> B.ByteString -> Maybe a
+decodeStrict (Decoder f) =
+  Parser.decodeStrictWith ParserI.jsonEOF (parse f)
+{-# INLINE decodeStrict #-}
+
+decodeStrict' :: Decoder a -> B.ByteString -> Maybe a
+decodeStrict' (Decoder f) =
+  Parser.decodeStrictWith ParserI.jsonEOF' (parse f)
+{-# INLINE decodeStrict' #-}
