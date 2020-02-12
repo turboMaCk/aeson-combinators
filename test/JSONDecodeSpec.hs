@@ -27,7 +27,7 @@ instance FromJSON Object
 decoder :: JD.Decoder Object
 decoder =
   Object
-    <$> JD.field "name" JD.text
+    <$> JD.field "name" JD.def
     <*> JD.field "nick" JD.def
 
 json :: ByteString
@@ -58,13 +58,13 @@ spec = do
               "bar" -> pure Bar
               _     -> fail "unknown"
       it "should work as a dummy value" $ do
-        JD.decode (JD.text >>= pure) "\"foo\""
+        JD.decode ((JD.def :: JD.Decoder String) >>= pure) "\"foo\""
           `shouldBe` (Just "foo")
 
       it "should turn string to sum" $ do
-        JD.decode (JD.text >>= fromText) "\"foo\""
+        JD.decode ((JD.def :: JD.Decoder String) >>= fromText) "\"foo\""
           `shouldBe` (Just Foo)
 
       it "should fail with right error" $ do
-        evaluate (JD.decode (JD.text >>= fromText) "\"foobar\"")
+        evaluate (JD.decode ((JD.def :: JD.Decoder String) >>= fromText) "\"foobar\"")
           `shouldThrow` (errorCall "unknown")

@@ -1,4 +1,21 @@
-module Data.JSON.Decoder where
+module Data.JSON.Decoder
+  ( Decoder(..)
+  , def
+  , field
+  , list
+  , decode
+  , decode'
+  , eitherDecode
+  , eitherDecode'
+  , decodeStrict
+  , decodeStrict'
+  , eitherDecodeStrict
+  , eitherDecodeStrict'
+  , decodeFileStrict
+  , decodeFileStrict'
+  , eitherDecodeFileStrict
+  , eitherDecodeFileStrict'
+  ) where
 
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Data.Aeson.Internal        as AI
@@ -17,22 +34,6 @@ newtype Decoder a =
 def :: FromJSON a => Decoder a
 def = Decoder parseJSON
 {-# INLINE def #-}
-
-parseChar :: Text -> Parser Char
-parseChar t =
-  if T.compareLength t 1 == EQ then
-    pure $ T.head t
-  else
-    fail "expected a string of length 1"
-{-# INLINE parseChar #-}
-
-char :: Decoder Char
-char = Decoder $ withText "Char" parseChar
-{-# INLINE char #-}
-
-text :: Decoder Text
-text = Decoder $ withText "String" pure
-{-# INLINE text #-}
 
 instance Functor Decoder where
   fmap f (Decoder d) = Decoder $ fmap f . d
@@ -65,19 +66,76 @@ field t (Decoder d) = Decoder $
 {-# INLINE field #-}
 
 list :: Decoder a -> Decoder [a]
-list (Decoder f) = Decoder $
-  listParser f
+list (Decoder d) = Decoder $
+  listParser d
 {-# INLINE list #-}
 
 decode :: Decoder a -> LB.ByteString -> Maybe a
-decode (Decoder f) =
-  Parser.decodeWith ParserI.jsonEOF (parse f)
+decode (Decoder d) =
+  Parser.decodeWith ParserI.jsonEOF (parse d)
 {-# INLINE decode #-}
 
 decode' :: Decoder a -> LB.ByteString -> Maybe a
-decode' (Decoder f) =
-  Parser.decodeWith ParserI.jsonEOF' (parse f)
+decode' (Decoder d) =
+  Parser.decodeWith ParserI.jsonEOF' (parse d)
 {-# INLINE decode' #-}
+
+eitherDecode :: Decoder a -> LB.ByteString -> Either String a
+eitherDecode (Decoder d) =
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (AI.iparse d)
+{-# INLINE eitherDecode #-}
+
+eitherDecode' :: Decoder a -> LB.ByteString -> Either String a
+eitherDecode' (Decoder d) =
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse d)
+{-# INLINE eitherDecode' #-}
+
+-- Strict
+
+decodeStrict :: Decoder a -> B.ByteString -> Maybe a
+decodeStrict (Decoder d) =
+  Parser.decodeStrictWith ParserI.jsonEOF (parse d)
+{-# INLINE decodeStrict #-}
+
+decodeStrict' :: Decoder a -> B.ByteString -> Maybe a
+decodeStrict' (Decoder d) =
+  Parser.decodeStrictWith ParserI.jsonEOF' (parse d)
+{-# INLINE decodeStrict' #-}
+
+eitherDecodeStrict :: Decoder a -> B.ByteString -> Either String a
+eitherDecodeStrict (Decoder d) =
+  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF (AI.iparse d)
+{-# INLINE eitherDecodeStrict #-}
+
+eitherDecodeStrict' :: Decoder a -> B.ByteString -> Either String a
+eitherDecodeStrict' (Decoder d) =
+  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (AI.iparse d)
+{-# INLINE eitherDecodeStrict' #-}
+
+-- Files
+
+decodeFileStrict :: Decoder a -> FilePath -> IO (Maybe a)
+decodeFileStrict dec =
+  fmap (decodeStrict dec) . B.readFile
+{-# INLINE decodeFileStrict #-}
+
+decodeFileStrict' :: Decoder a -> FilePath -> IO (Maybe a)
+decodeFileStrict' dec =
+  fmap (decodeStrict' dec) . B.readFile
+{-# INLINE decodeFileStrict' #-}
+
+eitherDecodeFileStrict :: Decoder a -> FilePath -> IO (Either String a)
+eitherDecodeFileStrict dec =
+  fmap (eitherDecodeStrict dec) . B.readFile
+{-# INLINE eitherDecodeFileStrict #-}
+
+eitherDecodeFileStrict' :: Decoder a -> FilePath -> IO (Either String a)
+eitherDecodeFileStrict' dec =
+  fmap (eitherDecodeStrict' dec) . B.readFile
+{-# INLINE eitherDecodeFileStrict' #-}
+
+
+-- Private functions Aeson doesn't expose
 
 -- | Annotate an error message with a
 -- <http://goessner.net/articles/JsonPath/ JSONPath> error location.
@@ -90,24 +148,10 @@ eitherFormatError :: Either (JSONPath, String) a -> Either String a
 eitherFormatError = either (Left . uncurry formatError) Right
 {-# INLINE eitherFormatError #-}
 
-eitherDecode :: Decoder a -> LB.ByteString -> Either String a
-eitherDecode (Decoder f) =
-  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (AI.iparse f)
-{-# INLINE eitherDecode #-}
-
-eitherDecode' :: Decoder a -> LB.ByteString -> Either String a
-eitherDecode' (Decoder f) =
-  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse f)
-{-# INLINE eitherDecode' #-}
-
--- Strict
-
-decodeStrict :: Decoder a -> B.ByteString -> Maybe a
-decodeStrict (Decoder f) =
-  Parser.decodeStrictWith ParserI.jsonEOF (parse f)
-{-# INLINE decodeStrict #-}
-
-decodeStrict' :: Decoder a -> B.ByteString -> Maybe a
-decodeStrict' (Decoder f) =
-  Parser.decodeStrictWith ParserI.jsonEOF' (parse f)
-{-# INLINE decodeStrict' #-}
+parseChar :: Text -> Parser Char
+parseChar t =
+  if T.compareLength t 1 == EQ then
+    pure $ T.head t
+  else
+    fail "expected a string of length 1"
+{-# INLINE parseChar #-}
