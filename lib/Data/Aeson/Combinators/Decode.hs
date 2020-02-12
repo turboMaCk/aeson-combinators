@@ -1,9 +1,20 @@
-module Data.JSON.Decoder
+{-
+
+TODO:
+- Vector
+- Containers
+
+-}
+
+module Data.Aeson.Combinators.Decode
   ( Decoder(..)
   , def
+  , jsonNull
+  , nullable
+  , list
+  , index
   , field
   , at
-  , list
   , decode
   , decode'
   , eitherDecode
@@ -18,6 +29,7 @@ module Data.JSON.Decoder
   , eitherDecodeFileStrict'
   ) where
 
+
 import           Control.Monad              hiding (fail)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Data.Aeson.Internal        as AI
@@ -27,14 +39,44 @@ import           Data.Aeson.Types
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
 import           Data.Text                  (Text)
+import           Data.Vector                ((!?))
 import           Prelude                    hiding (fail)
 
 newtype Decoder a =
   Decoder (Value -> Parser a)
 
+-- Basic Decoders
+
 def :: FromJSON a => Decoder a
 def = Decoder parseJSON
 {-# INLINE def #-}
+
+jsonNull :: a -> Decoder a
+jsonNull a = Decoder $ \val ->
+  case val of
+    Null -> pure a
+    _    -> typeMismatch "null" val
+
+nullable :: Decoder a -> Decoder (Maybe a)
+nullable (Decoder d) = Decoder $ \value ->
+  case value of
+    Null  -> pure Nothing
+    other -> Just <$> d other
+{-# INLINE nullable #-}
+
+list :: Decoder a -> Decoder [a]
+list (Decoder d) = Decoder $
+  listParser d
+{-# INLINE list #-}
+
+index :: Int -> Decoder a -> Decoder a
+index i (Decoder d) = Decoder $ \val ->
+  case val of
+    Array vec -> case vec !? i of
+                   Just v  -> d v
+                   Nothing -> unexpected val
+    _         -> typeMismatch "Array" val
+{-# INLINE index #-}
 
 instance Functor Decoder where
   fmap f (Decoder d) = Decoder $ fmap f . d
@@ -71,10 +113,8 @@ at path d =
   foldr field d path
 {-# INLINE at #-}
 
-list :: Decoder a -> Decoder [a]
-list (Decoder d) = Decoder $
-  listParser d
-{-# INLINE list #-}
+
+-- Decoding
 
 decode :: Decoder a -> LB.ByteString -> Maybe a
 decode (Decoder d) =

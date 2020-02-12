@@ -5,10 +5,10 @@
 module JSONDecodeSpec where
 
 import           Control.Exception
-import           Data.Aeson.Types          (FromJSON (..))
+import qualified Data.Aeson.Combinators.Decode as JD
+import           Data.Aeson.Types              (FromJSON (..))
 import           Data.ByteString.Lazy
-import           Data.ByteString.Lazy.UTF8 (fromString)
-import qualified Data.JSON.Decoder         as JD
+import           Data.ByteString.Lazy.UTF8     (fromString)
 import           Data.Text
 import           GHC.Generics
 import           Test.Hspec

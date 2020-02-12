@@ -4,11 +4,11 @@ let
       haskellPackages =
         pkgs.haskellPackages.override {
             overrides = self: super: {
-              dsjd = self.callCabal2nix "dsjd" ./. {};
+              aeson-combinators = self.callCabal2nix "aeson-combinators" ./. {};
             };
         };
     };
   };
   pkgs =
     import <nixpkgs> { inherit config; };
-in pkgs.haskellPackages.dsjd
+in pkgs.haskellPackages.aeson-combinators

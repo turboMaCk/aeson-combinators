@@ -1,4 +1,4 @@
-# Revision history for dsjd
+# Revision history for aeson-combinators
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
