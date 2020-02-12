@@ -1,15 +1,17 @@
 {-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module JSONDecodeSpec where
 
-import           Data.Aeson.Types     (FromJSON (..))
+import           Control.Exception
+import           Data.Aeson.Types          (FromJSON (..))
 import           Data.ByteString.Lazy
-import qualified Data.JSON.Decoder    as JD
+import           Data.ByteString.Lazy.UTF8 (fromString)
+import qualified Data.JSON.Decoder         as JD
 import           Data.Text
 import           GHC.Generics
 import           Test.Hspec
-import Control.Exception
 
 data Object =
   Object
@@ -38,7 +40,8 @@ jsonNested = "{\"data\":" <> json <> "}"
 
 spec :: Spec
 spec = do
-    context "simple object" $ do
+  describe "simple Object" $ do
+    context "Using `field`" $ do
       let res = Just $ Object "Jany Doe" "jany"
 
       it "should decode object" $ do
@@ -51,12 +54,14 @@ spec = do
       it "should be possible to use default decoder" $ do
         JD.decode JD.def json `shouldBe` res
 
-    context "monadic decoding" $ do
+  describe "monadic decoding" $ do
+    context "text to custom type" $ do
       let fromText v =
             case v of
               "foo" -> pure Foo
               "bar" -> pure Bar
               _     -> fail "unknown"
+
       it "should work as a dummy value" $ do
         JD.decode ((JD.def :: JD.Decoder String) >>= pure) "\"foo\""
           `shouldBe` (Just "foo")
@@ -68,3 +73,33 @@ spec = do
       it "should fail with right error" $ do
         evaluate (JD.decode ((JD.def :: JD.Decoder String) >>= fromText) "\"foobar\"")
           `shouldThrow` (errorCall "unknown")
+
+  describe "`at` function for in depth decoding" $ do
+    let
+      nest' :: Int -> ByteString -> ByteString
+      nest' n inner =
+          if n <= 0 then
+            inner
+          else
+            nest' (n - 1) ("{\"level-" <> fromString (show n) <> "\":" <> inner <> "}")
+    let nest n = nest' n json
+    let res = Just $ Object "Jany Doe" "jany"
+
+    context "Arbitrary deep json object" $ do
+      it "should decode object directly for empty list" $ do
+        JD.decode (JD.at [] decoder) json
+         `shouldBe` res
+
+      it "should decode 2 level json" $ do
+        let jdata = nest 2
+
+        JD.decode (JD.at ["level-1", "level-2"] decoder) jdata
+         `shouldBe` res
+
+      it "should decode 10 level json" $ do
+        let jdata = nest 10
+        let path = ["level-1", "level-2", "level-3", "level-4", "level-5"
+               , "level-6", "level-7", "level-8", "level-9", "level-10"
+               ]
+
+        JD.decode (JD.at path decoder) jdata `shouldBe` res

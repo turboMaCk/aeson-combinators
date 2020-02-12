@@ -2,6 +2,7 @@ module Data.JSON.Decoder
   ( Decoder(..)
   , def
   , field
+  , at
   , list
   , decode
   , decode'
@@ -17,6 +18,7 @@ module Data.JSON.Decoder
   , eitherDecodeFileStrict'
   ) where
 
+import           Control.Monad              hiding (fail)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
@@ -24,8 +26,7 @@ import qualified Data.Aeson.Parser.Internal as ParserI
 import           Data.Aeson.Types
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
-import           Data.Text
-import qualified Data.Text                  as T
+import           Data.Text                  (Text)
 import           Prelude                    hiding (fail)
 
 newtype Decoder a =
@@ -64,6 +65,11 @@ field t (Decoder d) = Decoder $
     Object v -> d =<< v .: t
     _        -> typeMismatch "Object" val
 {-# INLINE field #-}
+
+at :: [Text] -> Decoder a -> Decoder a
+at path d =
+  foldr field d path
+{-# INLINE at #-}
 
 list :: Decoder a -> Decoder [a]
 list (Decoder d) = Decoder $
@@ -147,11 +153,3 @@ formatError path msg =
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
 eitherFormatError = either (Left . uncurry formatError) Right
 {-# INLINE eitherFormatError #-}
-
-parseChar :: Text -> Parser Char
-parseChar t =
-  if T.compareLength t 1 == EQ then
-    pure $ T.head t
-  else
-    fail "expected a string of length 1"
-{-# INLINE parseChar #-}

@@ -40,5 +40,6 @@ test-suite spec
                      , bytestring
                      , text
                      , aeson
+                     , utf8-string
     ghc-options:       -Wall
     default-language:  Haskell2010
