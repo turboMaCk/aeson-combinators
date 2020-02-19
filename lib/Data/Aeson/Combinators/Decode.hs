@@ -8,7 +8,7 @@ TODO:
 
 module Data.Aeson.Combinators.Decode
   ( Decoder(..)
-  , def
+  , auto
   , jsonNull
   , nullable
   , list
@@ -29,7 +29,6 @@ module Data.Aeson.Combinators.Decode
   , eitherDecodeFileStrict'
   ) where
 
-
 import           Control.Monad              hiding (fail)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Data.Aeson.Internal        as AI
@@ -47,9 +46,9 @@ newtype Decoder a =
 
 -- Basic Decoders
 
-def :: FromJSON a => Decoder a
-def = Decoder parseJSON
-{-# INLINE def #-}
+auto :: FromJSON a => Decoder a
+auto = Decoder parseJSON
+{-# INLINE auto #-}
 
 jsonNull :: a -> Decoder a
 jsonNull a = Decoder $ \val ->

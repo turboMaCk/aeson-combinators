@@ -54,7 +54,7 @@ instance FromJSON Person
 
 decodeEmbededPerson :: ByteString -> [Text] -> Maybe Person
 decodeEmbededPerson json path =
-    ACD.decode (ACD.at path ACD.def) json
+    ACD.decode (ACD.at path ACD.auto) json
 ```
 
 Now we can extract Person from any key within the json:
@@ -75,8 +75,8 @@ decodePersonWithToken :: ByteString -> Maybe (Token, Person)
 decodePersonWithToken json =
     ACD.decode decoder json
     where decoder =
-            (,) <$> ACD.field "token" ACD.def
-                <*> ACD.field "person" ACD.def
+            (,) <$> ACD.field "token" ACD.auto
+                <*> ACD.field "person" ACD.auto
 ```
 
 Which can be used:
@@ -102,8 +102,8 @@ data Person = Person {
 personDecoder :: Decoder Person
 personDecoder =
     Person
-        <$> field "name" def
-        <*> field "age" def
+        <$> field "name" auto
+        <*> field "age" auto
 ```
 
 and use it directly as:

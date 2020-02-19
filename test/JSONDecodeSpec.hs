@@ -29,8 +29,8 @@ instance FromJSON Object
 decoder :: JD.Decoder Object
 decoder =
   Object
-    <$> JD.field "name" JD.def
-    <*> JD.field "nick" JD.def
+    <$> JD.field "name" JD.auto
+    <*> JD.field "nick" JD.auto
 
 json :: ByteString
 json = "{\"name\":\"Jany Doe\",\"nick\": \"jany\"}"
@@ -52,7 +52,7 @@ spec = do
           `shouldBe` res
 
       it "should be possible to use default decoder" $ do
-        JD.decode JD.def json `shouldBe` res
+        JD.decode JD.auto json `shouldBe` res
 
   describe "monadic decoding" $ do
     context "text to custom type" $ do
@@ -63,15 +63,15 @@ spec = do
               _     -> fail "unknown"
 
       it "should work as a dummy value" $ do
-        JD.decode ((JD.def :: JD.Decoder String) >>= pure) "\"foo\""
+        JD.decode ((JD.auto :: JD.Decoder String) >>= pure) "\"foo\""
           `shouldBe` (Just "foo")
 
       it "should turn string to sum" $ do
-        JD.decode ((JD.def :: JD.Decoder String) >>= fromText) "\"foo\""
+        JD.decode ((JD.auto :: JD.Decoder String) >>= fromText) "\"foo\""
           `shouldBe` (Just Foo)
 
       it "should fail with right error" $ do
-        evaluate (JD.decode ((JD.def :: JD.Decoder String) >>= fromText) "\"foobar\"")
+        evaluate (JD.decode ((JD.auto :: JD.Decoder String) >>= fromText) "\"foobar\"")
           `shouldThrow` (errorCall "unknown")
 
   describe "`at` function for in depth decoding" $ do
