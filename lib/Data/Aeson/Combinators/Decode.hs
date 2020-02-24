@@ -1,7 +1,5 @@
 {-
 
-TODO:
-- Vector
 - Containers
 
 -}
@@ -12,6 +10,7 @@ module Data.Aeson.Combinators.Decode
   , jsonNull
   , nullable
   , list
+  , vector
   , index
   , field
   , at
@@ -37,8 +36,9 @@ import qualified Data.Aeson.Parser.Internal as ParserI
 import           Data.Aeson.Types
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
+import qualified Data.Vector as Vector
 import           Data.Text                  (Text)
-import           Data.Vector                ((!?))
+import           Data.Vector                (Vector, (!?))
 import           Prelude                    hiding (fail)
 
 newtype Decoder a =
@@ -57,8 +57,8 @@ jsonNull a = Decoder $ \val ->
     _    -> typeMismatch "null" val
 
 nullable :: Decoder a -> Decoder (Maybe a)
-nullable (Decoder d) = Decoder $ \value ->
-  case value of
+nullable (Decoder d) = Decoder $ \val ->
+  case val of
     Null  -> pure Nothing
     other -> Just <$> d other
 {-# INLINE nullable #-}
@@ -67,6 +67,13 @@ list :: Decoder a -> Decoder [a]
 list (Decoder d) = Decoder $
   listParser d
 {-# INLINE list #-}
+
+vector :: Decoder a -> Decoder (Vector a)
+vector (Decoder d) = Decoder $ \val ->
+  case val of
+    Array v -> Vector.mapM d v
+    other -> typeMismatch "array" other
+{-# INLINE vector #-}
 
 index :: Int -> Decoder a -> Decoder a
 index i (Decoder d) = Decoder $ \val ->
