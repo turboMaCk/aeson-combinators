@@ -1,9 +1,3 @@
-{-
-
-- Containers
-
--}
-
 module Data.Aeson.Combinators.Decode
   ( Decoder(..)
   , auto
@@ -30,15 +24,16 @@ module Data.Aeson.Combinators.Decode
 
 import           Control.Monad              hiding (fail)
 import           Control.Monad.Fail         (MonadFail (..))
+import           Control.Applicative
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
 import           Data.Aeson.Types
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
-import qualified Data.Vector as Vector
 import           Data.Text                  (Text)
 import           Data.Vector                (Vector, (!?))
+import qualified Data.Vector                as Vector
 import           Prelude                    hiding (fail)
 
 newtype Decoder a =
@@ -72,7 +67,7 @@ vector :: Decoder a -> Decoder (Vector a)
 vector (Decoder d) = Decoder $ \val ->
   case val of
     Array v -> Vector.mapM d v
-    other -> typeMismatch "array" other
+    other   -> typeMismatch "array" other
 {-# INLINE vector #-}
 
 index :: Int -> Decoder a -> Decoder a
@@ -104,8 +99,15 @@ instance Monad Decoder where
       _ -> unexpected val
   {-# INLINE (>>=) #-}
 
+instance Alternative Decoder where
+  empty = Decoder unexpected
+  {-# INLINE empty #-}
+  Decoder a <|> Decoder b = Decoder $ \v -> a v <|> b v
+  {-# INLINE (<|>) #-}
+
 instance MonadFail Decoder where
   fail s = Decoder $ \_ -> fail s
+  {-# INLINE fail #-}
 
 field :: Text -> Decoder a -> Decoder a
 field t (Decoder d) = Decoder $
