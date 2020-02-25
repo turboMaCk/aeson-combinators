@@ -103,7 +103,7 @@ instance Monad Decoder where
                    in res val
       _ -> unexpected val
   {-# INLINE (>>=) #-}
-#if !(MIN_VERSION_base(4,13,0))
+#if !(MIN_VERSION_base(4,12,0))
   fail = Fail.fail
 #endif
 
