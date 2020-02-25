@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Data.Aeson.Combinators.Decode
   ( Decoder(..)
   , auto
@@ -22,9 +24,10 @@ module Data.Aeson.Combinators.Decode
   , eitherDecodeFileStrict'
   ) where
 
+import           Control.Applicative
 import           Control.Monad              hiding (fail)
 import           Control.Monad.Fail         (MonadFail (..))
-import           Control.Applicative
+import qualified Control.Monad.Fail         as Fail
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
@@ -97,6 +100,9 @@ instance Monad Decoder where
       Success v -> let (Decoder res) = f v
                    in res val
       _ -> unexpected val
+#if !MIN_VERSION_base(4,13,0)
+  fail = Fail.fail
+#endif
   {-# INLINE (>>=) #-}
 
 instance Alternative Decoder where
