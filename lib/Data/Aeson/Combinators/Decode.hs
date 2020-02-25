@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 module Data.Aeson.Combinators.Decode
   ( Decoder(..)
   , auto
@@ -22,9 +24,11 @@ module Data.Aeson.Combinators.Decode
   , eitherDecodeFileStrict'
   ) where
 
-import           Control.Monad              hiding (fail)
-import           Control.Monad.Fail         (MonadFail (..))
 import           Control.Applicative
+import           Control.Monad
+import           Control.Monad.Fail         (MonadFail (..))
+import qualified Control.Monad.Fail         as Fail
+import qualified Control.Monad.Fail         as Fail
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
@@ -50,6 +54,7 @@ jsonNull a = Decoder $ \val ->
   case val of
     Null -> pure a
     _    -> typeMismatch "null" val
+{-# INLINE jsonNull #-}
 
 nullable :: Decoder a -> Decoder (Maybe a)
 nullable (Decoder d) = Decoder $ \val ->
@@ -98,6 +103,9 @@ instance Monad Decoder where
                    in res val
       _ -> unexpected val
   {-# INLINE (>>=) #-}
+#if !(MIN_VERSION_base(4,13,0))
+  fail = Fail.fail
+#endif
 
 instance Alternative Decoder where
   empty = Decoder unexpected
@@ -106,7 +114,7 @@ instance Alternative Decoder where
   {-# INLINE (<|>) #-}
 
 instance MonadFail Decoder where
-  fail s = Decoder $ \_ -> fail s
+  fail s = Decoder $ \_ -> Fail.fail s
   {-# INLINE fail #-}
 
 field :: Text -> Decoder a -> Decoder a
@@ -144,7 +152,8 @@ eitherDecode' (Decoder d) =
   eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse d)
 {-# INLINE eitherDecode' #-}
 
--- Strict
+
+-- Strict Decoding
 
 decodeStrict :: Decoder a -> B.ByteString -> Maybe a
 decodeStrict (Decoder d) =
@@ -166,7 +175,7 @@ eitherDecodeStrict' (Decoder d) =
   eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (AI.iparse d)
 {-# INLINE eitherDecodeStrict' #-}
 
--- Files
+-- Files Decoding
 
 decodeFileStrict :: Decoder a -> FilePath -> IO (Maybe a)
 decodeFileStrict dec =

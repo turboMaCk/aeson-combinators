@@ -6,11 +6,11 @@
 module JSONDecodeSpec where
 
 import           Control.Applicative
-import           Control.Exception
 import qualified Data.Aeson.Combinators.Decode as JD
 import           Data.Aeson.Types              (FromJSON (..))
 import           Data.ByteString.Lazy
 import           Data.ByteString.Lazy.UTF8     (fromString)
+import           Data.Monoid                   ((<>))
 import           Data.Text
 import           GHC.Generics
 import           Test.Hspec
@@ -101,8 +101,8 @@ monadSpec =
         `shouldBe` (Just Foo)
 
     it "should fail with right error" $ do
-      evaluate (JD.decode ((JD.auto :: JD.Decoder String) >>= fromText) "\"foobar\"")
-        `shouldThrow` (errorCall "unknown")
+      JD.decode ((JD.auto :: JD.Decoder String) >>= fromText) "\"foobar\""
+        `shouldBe` Nothing
 
 alternativeSpec :: Spec
 alternativeSpec =
