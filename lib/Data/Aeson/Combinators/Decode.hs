@@ -28,6 +28,7 @@ import           Control.Applicative
 import           Control.Monad              hiding (fail)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
+import qualified Control.Monad.Fail         as Fail
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
@@ -53,6 +54,7 @@ jsonNull a = Decoder $ \val ->
   case val of
     Null -> pure a
     _    -> typeMismatch "null" val
+{-# INLINE jsonNull #-}
 
 nullable :: Decoder a -> Decoder (Maybe a)
 nullable (Decoder d) = Decoder $ \val ->
@@ -100,10 +102,10 @@ instance Monad Decoder where
       Success v -> let (Decoder res) = f v
                    in res val
       _ -> unexpected val
-#if !MIN_VERSION_base(4,13,0)
+  {-# INLINE (>>=) #-}
+#if !(MIN_VERSION_base(4,13,0))
   fail = Fail.fail
 #endif
-  {-# INLINE (>>=) #-}
 
 instance Alternative Decoder where
   empty = Decoder unexpected
