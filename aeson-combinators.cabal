@@ -28,6 +28,7 @@ library
                      , scientific
                      , vector
                      , unordered-containers
+                     , fail
   hs-source-dirs: lib
   default-language:    Haskell2010
 
