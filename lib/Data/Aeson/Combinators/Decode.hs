@@ -144,7 +144,8 @@ eitherDecode' (Decoder d) =
   eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse d)
 {-# INLINE eitherDecode' #-}
 
--- Strict
+
+-- Strict Decoding
 
 decodeStrict :: Decoder a -> B.ByteString -> Maybe a
 decodeStrict (Decoder d) =
@@ -166,7 +167,7 @@ eitherDecodeStrict' (Decoder d) =
   eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (AI.iparse d)
 {-# INLINE eitherDecodeStrict' #-}
 
--- Files
+-- Files Decoding
 
 decodeFileStrict :: Decoder a -> FilePath -> IO (Maybe a)
 decodeFileStrict dec =
