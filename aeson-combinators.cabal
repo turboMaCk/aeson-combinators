@@ -21,7 +21,7 @@ library
   exposed-modules: Data.Aeson.Combinators.Decode
   -- other-modules:
   -- other-extensions:
-  build-depends:       base >=4.12 && <4.13
+  build-depends:       base >= 4 && < 5
                      , bytestring
                      , text
                      , aeson
