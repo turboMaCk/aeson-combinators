@@ -25,7 +25,7 @@ module Data.Aeson.Combinators.Decode
   ) where
 
 import           Control.Applicative
-import           Control.Monad              hiding (fail)
+import           Control.Monad
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
 import qualified Control.Monad.Fail         as Fail
@@ -103,7 +103,7 @@ instance Monad Decoder where
                    in res val
       _ -> unexpected val
   {-# INLINE (>>=) #-}
-#if !(MIN_VERSION_base(4,12,0))
+#if !(MIN_VERSION_base(4,13,0))
   fail = Fail.fail
 #endif
 
@@ -114,7 +114,7 @@ instance Alternative Decoder where
   {-# INLINE (<|>) #-}
 
 instance MonadFail Decoder where
-  fail s = Decoder $ \_ -> fail s
+  fail s = Decoder $ \_ -> Fail.fail s
   {-# INLINE fail #-}
 
 field :: Text -> Decoder a -> Decoder a
