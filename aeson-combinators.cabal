@@ -17,6 +17,13 @@ build-type:          Simple
 extra-source-files:  CHANGELOG.md
 homepage:            https://github.com/turboMaCk/aeson-combinators
 
+Bug-Reports:         https://github.com/turboMacK/aeson-combinators/issues
+Tested-With:         GHC == 7.10.3
+                   , GHC == 7.8.4
+                   , GHC == 7.6.3
+                   , GHC == 8.4.4
+                   , GHC == 8.6.5
+
 library
   exposed-modules: Data.Aeson.Combinators.Decode
   -- other-modules:
