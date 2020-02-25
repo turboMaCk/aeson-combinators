@@ -30,8 +30,8 @@ instance FromJSON Object
 decoder :: JD.Decoder Object
 decoder =
   Object
-    <$> JD.field "name" JD.auto
-    <*> JD.field "nick" JD.auto
+    <$> JD.field "name" JD.text
+    <*> JD.field "nick" JD.text
 
 json :: ByteString
 json = "{\"name\":\"Jany Doe\",\"nick\": \"jany\"}"
@@ -93,22 +93,22 @@ monadSpec =
             _     -> fail "unknown"
 
     it "should work as a dummy value" $ do
-      JD.decode ((JD.auto :: JD.Decoder String) >>= pure) "\"foo\""
+      JD.decode (JD.string >>= pure) "\"foo\""
         `shouldBe` (Just "foo")
 
     it "should turn string to sum" $ do
-      JD.decode ((JD.auto :: JD.Decoder String) >>= fromText) "\"foo\""
+      JD.decode (JD.string >>= fromText) "\"foo\""
         `shouldBe` (Just Foo)
 
     it "should fail with right error" $ do
-      JD.decode ((JD.auto :: JD.Decoder String) >>= fromText) "\"foobar\""
+      JD.decode (JD.string >>= fromText) "\"foobar\""
         `shouldBe` Nothing
 
 alternativeSpec :: Spec
 alternativeSpec =
   describe "alternative (<|>)" $ do
     let (dec :: JD.Decoder (Either Bool Object)) =
-          Left <$> JD.auto <|> Right <$> decoder
+          Left <$> JD.bool <|> Right <$> decoder
 
     it "should decode first alternative" $ do
       JD.decode dec "false" `shouldBe` (Just $ Left False)

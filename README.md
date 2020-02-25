@@ -1,6 +1,9 @@
 <div align="center">
     <h1>Aeson Combinators</h1>
     <p>Aeson combinators for dead simple JSON decoding</p>
+    <p>
+        <img src="https://travis-ci.org/turboMaCk/aeson-combinators.svg?branch=master" alt="build status">
+    </p>
 </div>
 
 Aeson decoding API is closed over the type class `FromJSON`.

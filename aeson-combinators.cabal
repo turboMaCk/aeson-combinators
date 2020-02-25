@@ -34,6 +34,9 @@ library
                      , vector
                      , unordered-containers
                      , fail
+                     , time
+                     , time-compat
+                     , uuid-types
   hs-source-dirs: lib
   default-language:    Haskell2010
 
