@@ -37,6 +37,8 @@ library
                      , time
                      , time-compat
                      , uuid-types
+                     , containers
+                     , unordered-containers
   hs-source-dirs: lib
   default-language:    Haskell2010
 

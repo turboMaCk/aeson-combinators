@@ -1,4 +1,5 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP        #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Data.Aeson.Combinators.Decode
   ( Decoder(..)
@@ -32,12 +33,16 @@ module Data.Aeson.Combinators.Decode
   , dayOfWeek
   , uuid
   , jsonNull
+  , field
+  , at
   , nullable
   , list
   , vector
   , index
-  , field
-  , at
+  , hashMapLazy
+  , hashMapStrict
+  , mapLazy
+  , mapStrict
   , decode
   , decode'
   , eitherDecode
@@ -72,10 +77,15 @@ import           Data.UUID.Types            (UUID)
 import           Data.Vector                (Vector, (!?))
 import qualified Data.Vector                as Vector
 import           Data.Version               (Version)
-import           Data.Word                  (Word16, Word32, Word64, Word8, Word)
+import           Data.Word                  (Word, Word16, Word32, Word64,
+                                             Word8)
 #if (MIN_VERSION_base(4,8,0))
 import           GHC.Natural                (Natural)
 #endif
+import qualified Data.HashMap.Lazy          as HL
+import qualified Data.HashMap.Strict        as HS
+import qualified Data.Map.Lazy              as ML
+import qualified Data.Map.Strict            as MS
 import           Prelude                    hiding (fail)
 
 newtype Decoder a =
@@ -194,20 +204,18 @@ uuid = auto
 {-# INLINE uuid #-}
 
 jsonNull :: a -> Decoder a
-jsonNull a = Decoder $ \val ->
-  case val of
-    Null -> pure a
-    _    -> typeMismatch "null" val
+jsonNull a = Decoder $ \case
+  Null -> pure a
+  val    -> typeMismatch "null" val
 {-# INLINE jsonNull #-}
 
 
 -- Continer Decoders
 
 nullable :: Decoder a -> Decoder (Maybe a)
-nullable (Decoder d) = Decoder $ \val ->
-  case val of
-    Null  -> pure Nothing
-    other -> Just <$> d other
+nullable (Decoder d) = Decoder $ \case
+  Null  -> pure Nothing
+  other -> Just <$> d other
 {-# INLINE nullable #-}
 
 list :: Decoder a -> Decoder [a]
@@ -216,10 +224,9 @@ list (Decoder d) = Decoder $
 {-# INLINE list #-}
 
 vector :: Decoder a -> Decoder (Vector a)
-vector (Decoder d) = Decoder $ \val ->
-  case val of
-    Array v -> Vector.mapM d v
-    other   -> typeMismatch "array" other
+vector (Decoder d) = Decoder $ \case
+  Array v -> Vector.mapM d v
+  other   -> typeMismatch "Array" other
 {-# INLINE vector #-}
 
 index :: Int -> Decoder a -> Decoder a
@@ -230,6 +237,26 @@ index i (Decoder d) = Decoder $ \val ->
                    Nothing -> unexpected val
     _         -> typeMismatch "Array" val
 {-# INLINE index #-}
+
+hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
+hashMapStrict (Decoder d) = Decoder $ \case
+  Object xs -> traverse d xs
+  val -> typeMismatch "Array" val
+{-|# INLINE hashMapStrict #-}
+
+hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
+hashMapLazy (Decoder d) = Decoder $ \case
+  Object xs -> traverse d xs
+  val -> typeMismatch "Array" val
+{-|# INLINE hashMapLazy #-}
+
+mapStrict :: Decoder a -> Decoder (MS.Map Text a)
+mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
+{-|# INLINE mapStrict #-}
+
+mapLazy :: Decoder a -> Decoder (ML.Map Text a)
+mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
+{-|# INLINE mapStrict #-}
 
 
 -- Instances
