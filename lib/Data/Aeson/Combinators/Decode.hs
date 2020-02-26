@@ -33,12 +33,14 @@ module Data.Aeson.Combinators.Decode
   , dayOfWeek
   , uuid
   , jsonNull
-  , field
+  , key
   , at
+  , index
+  , element
+  , path
   , nullable
   , list
   , vector
-  , index
   , hashMapLazy
   , hashMapStrict
   , mapLazy
@@ -230,15 +232,6 @@ vector (Decoder d) = Decoder $ \case
   other   -> typeMismatch "Array" other
 {-# INLINE vector #-}
 
-index :: Int -> Decoder a -> Decoder a
-index i (Decoder d) = Decoder $ \val ->
-  case val of
-    Array vec -> case vec !? i of
-                   Just v  -> d v
-                   Nothing -> unexpected val
-    _         -> typeMismatch "Array" val
-{-# INLINE index #-}
-
 hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
 hashMapStrict (Decoder d) = Decoder $ \case
   Object xs -> traverse d xs
@@ -298,17 +291,34 @@ instance MonadFail Decoder where
 
 -- Object Combinators
 
-field :: Text -> Decoder a -> Decoder a
-field t (Decoder d) = Decoder $
-  \val -> case val of
-    Object v -> d =<< v .: t
-    _        -> typeMismatch "Object" val
-{-# INLINE field #-}
+key :: Text -> Decoder a -> Decoder a
+key t (Decoder d) = Decoder $ \case
+  Object v -> d =<< v .: t
+  val        -> typeMismatch "Object" val
+{-# INLINE key #-}
 
 at :: [Text] -> Decoder a -> Decoder a
-at path d =
-  foldr field d path
+at pth d =
+  foldr key d pth
 {-# INLINE at #-}
+
+index :: Int -> Decoder a -> Decoder a
+index i (Decoder d) = Decoder $ \val ->
+  case val of
+    Array vec -> case vec !? i of
+                    Just v  -> d v
+                    Nothing -> unexpected val
+    _         -> typeMismatch "Array" val
+{-# INLINE index #-}
+
+element :: JSONPathElement -> Decoder a -> Decoder a
+element (Key txt) = key txt
+element (Index i) = index i
+{-# INLINE element #-}
+
+path :: JSONPath -> Decoder a -> Decoder a
+path pth d = foldr element d pth
+{-# INLINE path #-}
 
 
 -- Decoding
@@ -385,8 +395,8 @@ eitherDecodeFileStrict' dec =
 -- | Annotate an error message with a
 -- <http://goessner.net/articles/JsonPath/ JSONPath> error location.
 formatError :: JSONPath -> String -> String
-formatError path msg =
-  "Error in " ++ formatPath path ++ ": " ++ msg
+formatError pth msg =
+  "Error in " ++ formatPath pth ++ ": " ++ msg
 {-# INLINE formatError #-}
 
 eitherFormatError :: Either (JSONPath, String) a -> Either String a

@@ -74,8 +74,8 @@ decodePersonWithToken :: ByteString -> Maybe (Token, Person)
 decodePersonWithToken json =
     ACD.decode decoder json
     where decoder =
-            (,) <$> ACD.field "token" ACD.text
-                <*> ACD.field "person" ACD.auto
+            (,) <$> ACD.key "token" ACD.text
+                <*> ACD.key "person" ACD.auto
 ```
 
 Which can be used:
@@ -91,18 +91,18 @@ If you like elm style decoding you can avoid using FromJSON type class all toghe
 
 ```haskell
 import Data.Text
-import qualified Data.Aeson.Combinators.Decode as DC
+import qualified Data.Aeson.Combinators.Decode as ACD
 
 data Person = Person {
       name :: Text
     , age  :: Int
     } deriving (Show)
 
-personDecoder :: DC.Decoder Person
+personDecoder :: ACD.Decoder Person
 personDecoder =
     Person
-        <$> field "name" DC.text
-        <*> field "age" DC.int
+        <$> ACD.key "name" ACD.text
+        <*> ACD.key "age" ACD.int
 ```
 
 and use it directly as:

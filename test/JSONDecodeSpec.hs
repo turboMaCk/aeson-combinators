@@ -30,8 +30,8 @@ instance FromJSON Object
 decoder :: JD.Decoder Object
 decoder =
   Object
-    <$> JD.field "name" JD.text
-    <*> JD.field "nick" JD.text
+    <$> JD.key "name" JD.text
+    <*> JD.key "nick" JD.text
 
 json :: ByteString
 json = "{\"name\":\"Jany Doe\",\"nick\": \"jany\"}"
@@ -48,7 +48,7 @@ objectSpec = do
       JD.decode decoder json `shouldBe` res
 
     it "should decode nested object" $ do
-      JD.decode (JD.field "data" decoder) jsonNested
+      JD.decode (JD.key "data" decoder) jsonNested
         `shouldBe` res
 
     it "should be possible to use default decoder" $ do
@@ -82,6 +82,17 @@ objectSpec = do
              ]
 
       JD.decode (JD.at path decoder) jdata `shouldBe` res
+
+arraySpec :: Spec
+arraySpec = do
+  describe "index" $ do
+    it "decode singleton by index" $ do
+      JD.decode (JD.index 0 decoder) "[{\"name\": \"Sanders\", \"nick\": \"bern\"}]"
+        `shouldBe` (Just $ Object "Sanders" "bern")
+
+    it "should decode nth index" $ do
+      JD.decode (JD.index 1 decoder) "[false, {\"name\": \"Sanders\", \"nick\": \"bern\"}, true]"
+        `shouldBe` (Just $ Object "Sanders" "bern")
 
 monadSpec :: Spec
 monadSpec =
@@ -120,5 +131,6 @@ alternativeSpec =
 spec :: Spec
 spec = do
   objectSpec
+  arraySpec
   monadSpec
   alternativeSpec
