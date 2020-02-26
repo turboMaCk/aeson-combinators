@@ -83,6 +83,17 @@ objectSpec = do
 
       JD.decode (JD.at path decoder) jdata `shouldBe` res
 
+arraySpec :: Spec
+arraySpec = do
+  describe "index" $ do
+    it "decode singleton by index" $ do
+      JD.decode (JD.index 0 decoder) "[{\"name\": \"Sanders\", \"nick\": \"bern\"}]"
+        `shouldBe` (Just $ Object "Sanders" "bern")
+
+    it "should decode nth index" $ do
+      JD.decode (JD.index 1 decoder) "[false, {\"name\": \"Sanders\", \"nick\": \"bern\"}, true]"
+        `shouldBe` (Just $ Object "Sanders" "bern")
+
 monadSpec :: Spec
 monadSpec =
   describe "monadic decoding" $ do
@@ -120,5 +131,6 @@ alternativeSpec =
 spec :: Spec
 spec = do
   objectSpec
+  arraySpec
   monadSpec
   alternativeSpec
