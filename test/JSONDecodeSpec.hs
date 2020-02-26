@@ -30,8 +30,8 @@ instance FromJSON Object
 decoder :: JD.Decoder Object
 decoder =
   Object
-    <$> JD.field "name" JD.text
-    <*> JD.field "nick" JD.text
+    <$> JD.key "name" JD.text
+    <*> JD.key "nick" JD.text
 
 json :: ByteString
 json = "{\"name\":\"Jany Doe\",\"nick\": \"jany\"}"
@@ -48,7 +48,7 @@ objectSpec = do
       JD.decode decoder json `shouldBe` res
 
     it "should decode nested object" $ do
-      JD.decode (JD.field "data" decoder) jsonNested
+      JD.decode (JD.key "data" decoder) jsonNested
         `shouldBe` res
 
     it "should be possible to use default decoder" $ do
