@@ -86,6 +86,7 @@ import qualified Data.HashMap.Lazy          as HL
 import qualified Data.HashMap.Strict        as HS
 import qualified Data.Map.Lazy              as ML
 import qualified Data.Map.Strict            as MS
+import           Data.Traversable           (traverse)
 import           Prelude                    hiding (fail)
 
 newtype Decoder a =
