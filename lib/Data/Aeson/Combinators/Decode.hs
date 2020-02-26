@@ -395,8 +395,8 @@ eitherDecodeFileStrict' dec =
 -- | Annotate an error message with a
 -- <http://goessner.net/articles/JsonPath/ JSONPath> error location.
 formatError :: JSONPath -> String -> String
-formatError path msg =
-  "Error in " ++ formatPath path ++ ": " ++ msg
+formatError pth msg =
+  "Error in " ++ formatPath pth ++ ": " ++ msg
 {-# INLINE formatError #-}
 
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
