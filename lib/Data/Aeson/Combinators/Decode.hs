@@ -19,6 +19,9 @@
 module Data.Aeson.Combinators.Decode (
   -- * Example Usage
   -- $usage
+
+  -- ** Applicative "Elm Style" Decoders
+  -- $applicative
    Decoder(..)
   , auto
 -- * Decoding Primitive Values
@@ -146,6 +149,28 @@ import           Prelude                    hiding (fail)
 -- > >>> decodePersonWithToken "{\"person\":{\"name\":\"Joe\",\"age\":12}, \"token\": \"foo\"}"
 -- > Just ("foo",Person {name = "Joe", age = 12})
 
+-- $applicative
+--
+-- If you like elm style decoding you can avoid using FromJSON type class all togher.
+--
+-- > import Data.Text
+-- > import qualified Data.Aeson.Combinators.Decode as ACD
+-- >
+-- > data Person = Person {
+-- >     name :: Text
+-- >     , age  :: Int
+-- >     } deriving (Show)
+-- >
+-- > personDecoder :: ACD.Decoder Person
+-- > personDecoder = Person
+-- >         <$> ACD.key "name" ACD.text
+-- >         <*> ACD.key "age" ACD.int
+--
+-- And use it directly as:
+--
+-- > >>> decode personDecoder "{\"name\":\"Joe\",\"age\":12}"
+-- > Just (Person {name = "Joe", age = 12})
+
 -- | === JSON Decoder
 --
 -- A value that describes how values are decoded from JSON.
@@ -156,7 +181,7 @@ newtype Decoder a =
 
 -- | 'Decoder' is compatible with Aeson FromJSON class
 -- 'auto' decoder acts like a proxy to instance implementation.
--- Any type that is an instance FromJSON is compatible.
+-- Any type that is an instance 'FromJSON' is compatible.
 --
 -- While 'auto' is universally useful for all primitive values,
 -- this library provides individual type constraint functions
