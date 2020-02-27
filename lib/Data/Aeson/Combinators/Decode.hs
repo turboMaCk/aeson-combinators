@@ -1,62 +1,65 @@
 {-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
-module Data.Aeson.Combinators.Decode
-  ( Decoder(..)
+-- |
+-- Module      : Data.Aeson.Cominators.Decode
+-- Copyright   : (c) Marek Fajkus
+-- License     : BSD3
+--
+-- Maintainer  : marek.faj@gmail.com
+--
+-- Combinators for JSON decoding using Aeson
+--
+
+module Data.Aeson.Combinators.Decode (
+-- * Decoding
+    Decoder(..)
   , auto
+-- * Decoding Primitive Values
+--
+-- *** Boolean
   , bool
-  , int
-  , int8
-  , int16
-  , int32
-  , int64
-  , integer
+-- *** Integers
+  , int, integer, int8, int16, int32, int64
 #if (MIN_VERSION_base(4,8,0))
   , natural
 #endif
-  , char
-  , word
-  , word8
-  , word16
-  , word32
-  , word64
-  , text
-  , string
-  , float
-  , double
   , version
-  , zonedTime
-  , localTime
-  , timeOfDay
-  , utcTime
-  , day
-  , dayOfWeek
+-- *** Floating Points
+  , float, double
+-- *** Strings
+  , char, text, string, word, word8, word16, word32, word64
   , uuid
+-- * Decoding Time
+  , zonedTime, localTime, timeOfDay, utcTime, day, dayOfWeek
+-- * Decodeing Containers
+-- *** Maybe
+  , nullable
+-- *** Sequences
+  , list, vector
+-- *** Hasmap
+  , hashMapLazy, hashMapStrict
+-- *** Map
+  , mapLazy, mapStrict
+-- * Combinators
   , jsonNull
+-- *** Objects:
   , key
   , at
+-- *** Arrays
   , index
+-- *** Path
   , element
   , path
-  , nullable
-  , list
-  , vector
-  , hashMapLazy
-  , hashMapStrict
-  , mapLazy
-  , mapStrict
-  , decode
-  , decode'
-  , eitherDecode
-  , eitherDecode'
-  , decodeStrict
-  , decodeStrict'
-  , eitherDecodeStrict
-  , eitherDecodeStrict'
-  , decodeFileStrict
-  , decodeFileStrict'
-  , eitherDecodeFileStrict
-  , eitherDecodeFileStrict'
+-- * Running Decoders
+-- *** Decoding From Byte Strings
+  , decode, decode'
+  , eitherDecode, eitherDecode'
+  , decodeStrict, decodeStrict'
+  , eitherDecodeStrict, eitherDecodeStrict'
+-- *** Decoding Files
+  , decodeFileStrict, decodeFileStrict'
+  , eitherDecodeFileStrict, eitherDecodeFileStrict'
   ) where
 
 import           Control.Applicative
@@ -91,6 +94,9 @@ import qualified Data.Map.Strict            as MS
 import           Data.Traversable           (traverse)
 import           Prelude                    hiding (fail)
 
+-- | === JSON Decoder
+--
+-- A value that describes how values are decoded from JSON.
 newtype Decoder a =
   Decoder (Value -> Parser a)
 
