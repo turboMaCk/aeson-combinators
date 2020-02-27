@@ -8,12 +8,18 @@
 --
 -- Maintainer  : marek.faj@gmail.com
 --
--- Combinators for JSON decoding using Aeson
+-- Aeson decoding API is closed over the type class `FromJSON`.
+-- Because of this there is one to one mapping between JSON
+-- format and data decoded from it.
+-- While this is handy in many situations it forces
+-- users of Aeson library to define proxy types and
+-- data wrappers just for sake of implementing instance
+-- of `FromJSON` and `ToJSON`.
 --
-
 module Data.Aeson.Combinators.Decode (
--- * Decoding
-    Decoder(..)
+  -- * Example Usage
+  -- $usage
+   Decoder(..)
   , auto
 -- * Decoding Primitive Values
 --
@@ -94,6 +100,52 @@ import qualified Data.Map.Strict            as MS
 import           Data.Traversable           (traverse)
 import           Prelude                    hiding (fail)
 
+-- $usage
+-- As mentioned above, combinators and type classes can be used together.
+--
+-- __Decode type nested in json__
+--
+-- > {-# LANGUAGE DeriveGeneric #-}
+-- > import Data.Text
+-- > import Data.ByteString.Lazy (ByteString)
+-- > import Data.Aeson.Types
+-- > import qualified Data.Aeson.Combinators.Decode as ACD
+-- > import GHC.Generics
+-- >
+-- > data Person = Person
+-- >     { name :: Text
+-- >     , age  :: Int
+-- >     } deriving (Generic, Show)
+-- >
+-- > instance FromJSON Person
+-- >
+-- > decodeEmbededPerson :: [Text] -> ByteString -> Maybe Person
+-- > decodeEmbededPerson path json =
+-- >     ACD.decode (ACD.at path ACD.auto) json
+-- >
+--
+-- Now we can extract Person from any key within the json.
+--
+-- > >>> decodeEmbededPerson ["data", "person"] "{\"data\": {\"person\":{\"name\":\"Joe\",\"age\":12}}}"
+-- > Just (Person {name = "Joe", age = 12})
+--
+-- __Easily decode multiple data from single json:__
+--
+-- > -- data Person defined above ^
+-- >
+-- >  type Token = Text
+-- >
+-- >  decodePersonWithToken :: ByteString -> Maybe (Token, Person)
+-- >  decodePersonWithToken json = ACD.decode decoder json
+-- >      where decoder =
+-- >              (,) <$> ACD.key "token" ACD.text
+-- >                  <*> ACD.key "person" ACD.auto
+--
+-- Which can be used as following
+--
+-- > >>> decodePersonWithToken "{\"person\":{\"name\":\"Joe\",\"age\":12}, \"token\": \"foo\"}"
+-- > Just ("foo",Person {name = "Joe", age = 12})
+
 -- | === JSON Decoder
 --
 -- A value that describes how values are decoded from JSON.
@@ -102,6 +154,13 @@ newtype Decoder a =
 
 -- Basic Decoders
 
+-- | 'Decoder' is compatible with Aeson FromJSON class
+-- 'auto' decoder acts like a proxy to instance implementation.
+-- Any type that is an instance FromJSON is compatible.
+--
+-- While 'auto' is universally useful for all primitive values,
+-- this library provides individual type constraint functions
+-- for decoding those values.
 auto :: FromJSON a => Decoder a
 auto = Decoder parseJSON
 {-# INLINE auto #-}
