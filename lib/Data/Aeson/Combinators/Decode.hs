@@ -454,7 +454,7 @@ dayOfWeek = auto
 
 -- | Decode JSON null and other JSON value to 'Data.Maybe'.
 -- JSON null will be decoded to 'Nothing'.
--- Other value decoded by provided 'Decoder' to 'Just a'
+-- Other value decoded by provided 'Decoder' to 'Just'
 nullable :: Decoder a -> Decoder (Maybe a)
 nullable (Decoder d) = Decoder $ \case
   Null  -> pure Nothing
@@ -599,23 +599,47 @@ path pth d = foldr element d pth
 -- Decoding
 
 -- $running
--- TODO
+--
+-- Following functions are evivalent to the one provided by Aeson.
+-- The only difference is versions provided by Aeson
+-- for with 'FromJSON' instances while these use 'Decoder' type
+-- instead.
 
+-- | Efficiently deserialize a JSON value from a lazy 'L.ByteString'.
+-- If this fails due to incomplete or invalid input, 'Nothing' is
+-- returned.
+--
+-- The input must consist solely of a JSON document, with no trailing
+-- data except for whitespace.
+--
+-- This function parses immediately, but defers conversion.  See
+-- 'json' for details.
 decode :: Decoder a -> LB.ByteString -> Maybe a
 decode (Decoder d) =
   Parser.decodeWith ParserI.jsonEOF (parse d)
 {-# INLINE decode #-}
 
+-- | Efficiently deserialize a JSON value from a lazy 'L.ByteString'.
+-- If this fails due to incomplete or invalid input, 'Nothing' is
+-- returned.
+--
+-- The input must consist solely of a JSON document, with no trailing
+-- data except for whitespace.
+--
+-- This function parses and performs conversion immediately.  See
+-- 'json'' for details.
 decode' :: Decoder a -> LB.ByteString -> Maybe a
 decode' (Decoder d) =
   Parser.decodeWith ParserI.jsonEOF' (parse d)
 {-# INLINE decode' #-}
 
+-- | Like 'decode' but returns an error message when decoding fails.
 eitherDecode :: Decoder a -> LB.ByteString -> Either String a
 eitherDecode (Decoder d) =
   eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (AI.iparse d)
 {-# INLINE eitherDecode #-}
 
+-- | Like 'decode'' but returns an error message when decoding fails.
 eitherDecode' :: Decoder a -> LB.ByteString -> Either String a
 eitherDecode' (Decoder d) =
   eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse d)
@@ -624,21 +648,41 @@ eitherDecode' (Decoder d) =
 
 -- Strict Decoding
 
+-- | Efficiently deserialize a JSON value from a strict 'B.ByteString'.
+-- If this fails due to incomplete or invalid input, 'Nothing' is
+-- returned.
+--
+-- The input must consist solely of a JSON document, with no trailing
+-- data except for whitespace.
+--
+-- This function parses immediately, but defers conversion.  See
+-- 'json' for details.
 decodeStrict :: Decoder a -> B.ByteString -> Maybe a
 decodeStrict (Decoder d) =
   Parser.decodeStrictWith ParserI.jsonEOF (parse d)
 {-# INLINE decodeStrict #-}
 
+-- | Efficiently deserialize a JSON value from a strict 'B.ByteString'.
+-- If this fails due to incomplete or invalid input, 'Nothing' is
+-- returned.
+--
+-- The input must consist solely of a JSON document, with no trailing
+-- data except for whitespace.
+--
+-- This function parses and performs conversion immediately.  See
+-- 'json'' for details.
 decodeStrict' :: Decoder a -> B.ByteString -> Maybe a
 decodeStrict' (Decoder d) =
   Parser.decodeStrictWith ParserI.jsonEOF' (parse d)
 {-# INLINE decodeStrict' #-}
 
+-- | Like 'decodeStrict' but returns an error message when decoding fails.
 eitherDecodeStrict :: Decoder a -> B.ByteString -> Either String a
 eitherDecodeStrict (Decoder d) =
   eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF (AI.iparse d)
 {-# INLINE eitherDecodeStrict #-}
 
+-- | Like 'decodeStrict'' but returns an error message when decoding fails.
 eitherDecodeStrict' :: Decoder a -> B.ByteString -> Either String a
 eitherDecodeStrict' (Decoder d) =
   eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (AI.iparse d)
@@ -647,21 +691,41 @@ eitherDecodeStrict' (Decoder d) =
 
 -- File Decoding
 
+-- | Efficiently deserialize a JSON value from a file.
+-- If this fails due to incomplete or invalid input, 'Nothing' is
+-- returned.
+--
+-- The input file's content must consist solely of a JSON document,
+-- with no trailing data except for whitespace.
+--
+-- This function parses immediately, but defers conversion.  See
+-- 'json' for details.
 decodeFileStrict :: Decoder a -> FilePath -> IO (Maybe a)
 decodeFileStrict dec =
   fmap (decodeStrict dec) . B.readFile
 {-# INLINE decodeFileStrict #-}
 
+-- | Efficiently deserialize a JSON value from a file.
+-- If this fails due to incomplete or invalid input, 'Nothing' is
+-- returned.
+--
+-- The input file's content must consist solely of a JSON document,
+-- with no trailing data except for whitespace.
+--
+-- This function parses and performs conversion immediately.  See
+-- 'json'' for details.
 decodeFileStrict' :: Decoder a -> FilePath -> IO (Maybe a)
 decodeFileStrict' dec =
   fmap (decodeStrict' dec) . B.readFile
 {-# INLINE decodeFileStrict' #-}
 
+-- | Like 'decodeFileStrict' but returns an error message when decoding fails.
 eitherDecodeFileStrict :: Decoder a -> FilePath -> IO (Either String a)
 eitherDecodeFileStrict dec =
   fmap (eitherDecodeStrict dec) . B.readFile
 {-# INLINE eitherDecodeFileStrict #-}
 
+-- | Like 'decodeFileStrict'' but returns an error message when decoding fails.
 eitherDecodeFileStrict' :: Decoder a -> FilePath -> IO (Either String a)
 eitherDecodeFileStrict' dec =
   fmap (eitherDecodeStrict' dec) . B.readFile
