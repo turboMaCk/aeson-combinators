@@ -99,8 +99,7 @@ data Person = Person {
     } deriving (Show)
 
 personDecoder :: ACD.Decoder Person
-personDecoder =
-    Person
+personDecoder = Person
         <$> ACD.key "name" ACD.text
         <*> ACD.key "age" ACD.int
 ```

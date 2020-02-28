@@ -21,8 +21,7 @@ data Object = Object
     }
     deriving (Show, Eq, Generic)
 
-data FooBar = Foo
-    | Bar
+data FooBar = Foo | Bar
     deriving (Show, Eq)
 
 instance FromJSON Object
@@ -112,8 +111,8 @@ monadSpec =
         `shouldBe` (Just Foo)
 
     it "should fail with right error" $ do
-      JD.decode (JD.string >>= fromText) "\"foobar\""
-        `shouldBe` Nothing
+      JD.eitherDecode (JD.string >>= fromText) "\"foobar\""
+        `shouldBe` (Left "Error in $: unknown")
 
 alternativeSpec :: Spec
 alternativeSpec =
@@ -128,9 +127,27 @@ alternativeSpec =
       JD.decode dec "{\"name\": \"Joe\",\"nick\": \"jd\"}"
         `shouldBe` (Just $ Right $ Object "Joe" "jd")
 
+jsonNullSpec :: Spec
+jsonNullSpec =
+  describe "jsonNull" $ do
+    let barDec txt =
+          case txt of
+            "bar" -> pure Bar
+            _     -> fail $ "Unknown value" <> show txt
+
+    let (dec :: JD.Decoder FooBar) =
+          JD.jsonNull Foo <|> (barDec =<< JD.text)
+
+    it "should decode Foo from null" $ do
+      JD.decode dec "null" `shouldBe` (Just Foo)
+
+    it "should decode Bar from string" $ do
+      JD.decode dec "\"bar\"" `shouldBe` (Just Bar)
+
 spec :: Spec
 spec = do
   objectSpec
   arraySpec
   monadSpec
   alternativeSpec
+  jsonNullSpec
