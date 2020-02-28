@@ -612,8 +612,8 @@ path pth d = foldr element d pth
 -- The input must consist solely of a JSON document, with no trailing
 -- data except for whitespace.
 --
--- This function parses immediately, but defers conversion.  See
--- 'json' for details.
+-- This function parses immediately, but defers conversion. See
+-- 'Data.Aeson.json' for details.
 decode :: Decoder a -> LB.ByteString -> Maybe a
 decode (Decoder d) =
   Parser.decodeWith ParserI.jsonEOF (parse d)
@@ -626,8 +626,8 @@ decode (Decoder d) =
 -- The input must consist solely of a JSON document, with no trailing
 -- data except for whitespace.
 --
--- This function parses and performs conversion immediately.  See
--- 'json'' for details.
+-- This function parses and performs conversion immediately. See
+-- 'Data.Aeson.json'' for details.
 decode' :: Decoder a -> LB.ByteString -> Maybe a
 decode' (Decoder d) =
   Parser.decodeWith ParserI.jsonEOF' (parse d)
@@ -655,8 +655,8 @@ eitherDecode' (Decoder d) =
 -- The input must consist solely of a JSON document, with no trailing
 -- data except for whitespace.
 --
--- This function parses immediately, but defers conversion.  See
--- 'json' for details.
+-- This function parses immediately, but defers conversion. See
+-- 'Data.Aeson.json' for details.
 decodeStrict :: Decoder a -> B.ByteString -> Maybe a
 decodeStrict (Decoder d) =
   Parser.decodeStrictWith ParserI.jsonEOF (parse d)
@@ -670,7 +670,7 @@ decodeStrict (Decoder d) =
 -- data except for whitespace.
 --
 -- This function parses and performs conversion immediately.  See
--- 'json'' for details.
+-- 'Data.Aeson.json'' for details.
 decodeStrict' :: Decoder a -> B.ByteString -> Maybe a
 decodeStrict' (Decoder d) =
   Parser.decodeStrictWith ParserI.jsonEOF' (parse d)
@@ -698,8 +698,8 @@ eitherDecodeStrict' (Decoder d) =
 -- The input file's content must consist solely of a JSON document,
 -- with no trailing data except for whitespace.
 --
--- This function parses immediately, but defers conversion.  See
--- 'json' for details.
+-- This function parses immediately, but defers conversion. See
+-- 'Data.Aeson.json' for details.
 decodeFileStrict :: Decoder a -> FilePath -> IO (Maybe a)
 decodeFileStrict dec =
   fmap (decodeStrict dec) . B.readFile
@@ -713,7 +713,7 @@ decodeFileStrict dec =
 -- with no trailing data except for whitespace.
 --
 -- This function parses and performs conversion immediately.  See
--- 'json'' for details.
+-- 'Data.Aeson.json'' for details.
 decodeFileStrict' :: Decoder a -> FilePath -> IO (Maybe a)
 decodeFileStrict' dec =
   fmap (decodeStrict' dec) . B.readFile
