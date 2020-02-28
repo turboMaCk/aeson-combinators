@@ -26,19 +26,19 @@ module Data.Aeson.Combinators.Decode (
   , auto
 -- * Decoding Primitive Values
 --
--- *** Boolean
-  , bool
--- *** Integers
+-- *** Void, Unit, Bool
+  , void, unit, bool
+-- *** Integers (and Natural)
   , int, integer, int8, int16, int32, int64
+  , word, word8, word16, word32, word64
 #if (MIN_VERSION_base(4,8,0))
   , natural
 #endif
-  , version
 -- *** Floating Points
   , float, double
 -- *** Strings
-  , char, text, string, word, word8, word16, word32, word64
-  , uuid
+  , char, text, string
+  , uuid, version
 -- * Decoding Time
   , zonedTime, localTime, timeOfDay, utcTime, day, dayOfWeek
 -- * Decodeing Containers
@@ -72,7 +72,7 @@ module Data.Aeson.Combinators.Decode (
   ) where
 
 import           Control.Applicative
-import           Control.Monad
+import           Control.Monad              hiding (void)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
 import qualified Data.Aeson.Internal        as AI
@@ -91,6 +91,7 @@ import           Data.UUID.Types            (UUID)
 import           Data.Vector                (Vector, (!?))
 import qualified Data.Vector                as Vector
 import           Data.Version               (Version)
+import           Data.Void                  (Void)
 import           Data.Word                  (Word, Word16, Word32, Word64,
                                              Word8)
 #if (MIN_VERSION_base(4,8,0))
@@ -156,8 +157,8 @@ import           Prelude                    hiding (fail)
 -- > import Data.Text
 -- > import qualified Data.Aeson.Combinators.Decode as ACD
 -- >
--- > data Person = Person {
--- >     name :: Text
+-- > data Person = Person
+-- >     { name :: Text
 -- >     , age  :: Int
 -- >     } deriving (Show)
 -- >
@@ -266,7 +267,7 @@ instance MonadFail Decoder where
 
 -- Basic Decoders
 
--- | 'Decoder' is compatible with Aeson's 'FromJSON' class
+-- | 'Decoder' is compatible with Aeson's 'FromJSON' class.
 -- 'auto' decoder acts like a proxy to instance implementation.
 -- Any type that is an instance of this class is automatically compatible.
 --
@@ -277,83 +278,123 @@ auto :: FromJSON a => Decoder a
 auto = Decoder parseJSON
 {-# INLINE auto #-}
 
+-- | Decode any JSON value to 'Void' value
+-- which is impossible to construct.
+--
+-- __This Decoder is guarenteed to fail.__
+void :: Decoder Void
+void = auto
+{-# INLINE void #-}
+
+-- | Decode JSON null into '()'
+unit :: Decoder ()
+unit = auto
+{-# INLINE unit #-}
+
+-- | Decode JSON booleans to Haskell 'Data.Bool'
 bool :: Decoder Bool
 bool = auto
 {-# INLINE bool #-}
 
+-- | Decode single character JSON string to 'Data.Char'
 char :: Decoder Char
 char = auto
 {-# INLINE char #-}
 
+-- | Decode JSON string to 'Data.String'
 string :: Decoder String
 string = auto
 {-# INLINE string #-}
 
+-- | Decode JSON string to 'Data.Text'
 text :: Decoder Text
 text = auto
 {-# INLINE text #-}
 
+-- | Decode JSON string to 'Data.UUID.Types.UUID'
+uuid :: Decoder UUID
+uuid = auto
+{-# INLINE uuid #-}
+
+-- | Decode JSON string to 'Data.Version'
+version :: Decoder Version
+version = auto
+
+{-# INLINE version #-}
+-- | Decode JSON number to 'Data.Int.Int'
 int :: Decoder Int
 int = auto
 {-# INLINE int #-}
 
+-- | Decode JSON number to 'Data.Int.Int8'
 int8 :: Decoder Int8
 int8 = auto
 {-# INLINE int8 #-}
 
+-- | Decode JSON number to 'Data.Int.Int16'
 int16 :: Decoder Int16
 int16 = auto
 {-# INLINE int16 #-}
 
+-- | Decode JSON number to 'Data.Int.Int32'
 int32 :: Decoder Int32
 int32 = auto
 {-# INLINE int32 #-}
 
+-- | Decode JSON number to 'Data.Int.Int64'
 int64 :: Decoder Int64
 int64 = auto
 {-# INLINE int64 #-}
 
+-- | Decode JSON number to unbounded 'Integer'
 integer :: Decoder Integer
 integer = auto
 {-# INLINE integer #-}
 
 #if (MIN_VERSION_base(4,8,0))
+-- | Decode JSON number to GHC's 'GHC.Natural' (non negative)
+--
+-- This function requires 'base' >= 4.8.0
 natural :: Decoder Natural
 natural = auto
 {-# INLINE natural #-}
 #endif
 
-float :: Decoder Float
-float = auto
-{-# INLINE float #-}
-
-double :: Decoder Double
-double = auto
-{-# INLINE double #-}
-
+-- | Decode JSON number to bounded 'Data.Word.Word'
 word :: Decoder Word
 word = auto
 {-# INLINE word #-}
 
+-- | Decode JSON number to bounded 'Data.Word.Word8'
 word8 :: Decoder Word8
 word8 = auto
 {-# INLINE word8 #-}
 
+-- | Decode JSON number to bounded 'Data.Word.Word16'
 word16 :: Decoder Word16
 word16 = auto
 {-# INLINE word16 #-}
 
+-- | Decode JSON number to bounded 'Data.Word.Word32'
 word32 :: Decoder Word32
 word32 = auto
 {-# INLINE word32 #-}
 
+-- | Decode JSON number to bounded 'Data.Word.Word64'
 word64 :: Decoder Word64
 word64 = auto
 {-# INLINE word64 #-}
 
-version :: Decoder Version
-version = auto
-{-# INLINE version #-}
+
+-- | Decode JSON number to 'Float'
+float :: Decoder Float
+float = auto
+{-# INLINE float #-}
+
+-- | Decode JSON number to 'Double'
+double :: Decoder Double
+double = auto
+{-# INLINE double #-}
 
 zonedTime :: Decoder ZonedTime
 zonedTime = auto
@@ -378,10 +419,6 @@ day = auto
 dayOfWeek :: Decoder DayOfWeek
 dayOfWeek = auto
 {-# INLINE dayOfWeek #-}
-
-uuid :: Decoder UUID
-uuid = auto
-{-# INLINE uuid #-}
 
 jsonNull :: a -> Decoder a
 jsonNull a = Decoder $ \case
