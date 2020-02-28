@@ -8,13 +8,13 @@
 --
 -- Maintainer  : marek.faj@gmail.com
 --
--- Aeson decoding API is closed over the type class `FromJSON`.
+-- Aeson decoding API is closed over the type class 'FromJSON'.
 -- Because of this there is one to one mapping between JSON
 -- format and data decoded from it.
 -- While this is handy in many situations it forces
 -- users of Aeson library to define proxy types and
 -- data wrappers just for sake of implementing instance
--- of `FromJSON` and `ToJSON`.
+-- of 'FromJSON'.
 --
 module Data.Aeson.Combinators.Decode (
   -- * Example Usage
@@ -151,7 +151,7 @@ import           Prelude                    hiding (fail)
 
 -- $applicative
 --
--- If you like elm style decoding you can avoid using FromJSON type class all togher.
+-- If you like elm style decoding you can avoid using 'FromJSON' type class all togher.
 --
 -- > import Data.Text
 -- > import qualified Data.Aeson.Combinators.Decode as ACD
@@ -171,19 +171,106 @@ import           Prelude                    hiding (fail)
 -- > >>> decode personDecoder "{\"name\":\"Joe\",\"age\":12}"
 -- > Just (Person {name = "Joe", age = 12})
 
+
 -- | === JSON Decoder
 --
 -- A value that describes how values are decoded from JSON.
+-- This type is an alternative to Aeson's 'FromJSON' instance implementation.
+--
+-- Use 'decode', 'decode', 'eitherDecode', 'eitherDecode''
+-- 'decodeStrict', 'decodeStrict'', 'eitherDecodeStrict' or 'eitherDecodeStrict''
+-- alternatives provided by this module for decoding from 'BytString'.
+--
+-- For decoding files use
+-- 'decodeFileStrict', 'decodeFileStrict''
+-- 'eitherDecodeFileStrict', 'eitherDecodeFileStrict''
+-- also provided by this module.
+--
+-- ==== Using Instances of Decoder
+-- __Functor to map function over 'Decoder'__
+--
+-- > intToString :: Decoder String
+-- > intToString = show <$> Decode.int
+--
+-- > >>> decode intToString "2"
+-- > Just "2"
+--
+-- __Applicateve to construct products__
+--
+-- > stringIntPair :: Decoder (String, Int)
+-- > stringIntPair = (,) <$> index 0 string
+-- >                     <*> index 1 int
+--
+-- > >>> decode stringIntPair "[\"hello\", 42]"
+-- > Just ("hello", 42)
+--
+-- __Alternative to construct sums__
+--
+-- > eitherTextOrInt :: Decoder (Either Text Int)
+-- > eitherTextOrInt = Left  <$> Decode.text
+-- >               <|> Right <$> Decode.int
+--
+-- > >>> decode eitherTextOrInt "\"Lorem Ipsum\""
+-- > Just (Left "Lorem Ipsum")
+-- > >>> decode eitherTextOrInt "42"
+-- > Just (Right 42)
+--
+-- __Monad for 'Decoder' chaining__
+--
+-- > odd :: Decoder Int
+-- > odd = do
+-- >   val <- int
+-- >   if val % 2 == 1
+-- >   then $ return val
+-- >   else Fail.fail $ "Expected odd value, got " <> show val -- Using Control.Monad.Fail
+--
+-- > >>> eitherDecode odd "3"
+-- > Left 3
+-- > >>> eitherDecode odd "4"
+-- > Right "Expected odd value, got 4"
 newtype Decoder a =
   Decoder (Value -> Parser a)
 
+instance Functor Decoder where
+  fmap f (Decoder d) = Decoder $ fmap f . d
+  {-# INLINE fmap #-}
+
+instance Applicative Decoder where
+  pure val = Decoder $ \_ -> pure val
+  {-# INLINE pure #-}
+  (Decoder f') <*> (Decoder d) = Decoder $
+    \val ->
+        (\f -> fmap f (d val)) =<< f' val
+  {-# INLINE (<*>) #-}
+
+instance Monad Decoder where
+  (Decoder a) >>= f = Decoder $
+    \val -> case parse a val of
+      Success v -> let (Decoder res) = f v
+                   in res val
+      _ -> unexpected val
+  {-# INLINE (>>=) #-}
+#if !(MIN_VERSION_base(4,13,0))
+  fail = Fail.fail
+#endif
+
+instance Alternative Decoder where
+  empty = Decoder unexpected
+  {-# INLINE empty #-}
+  Decoder a <|> Decoder b = Decoder $ \v -> a v <|> b v
+  {-# INLINE (<|>) #-}
+
+instance MonadFail Decoder where
+  fail s = Decoder $ \_ -> Fail.fail s
+  {-# INLINE fail #-}
+
 -- Basic Decoders
 
--- | 'Decoder' is compatible with Aeson FromJSON class
+-- | 'Decoder' is compatible with Aeson's 'FromJSON' class
 -- 'auto' decoder acts like a proxy to instance implementation.
--- Any type that is an instance 'FromJSON' is compatible.
+-- Any type that is an instance of this class is automatically compatible.
 --
--- While 'auto' is universally useful for all primitive values,
+-- While 'auto' is universally usable for all primitive values,
 -- this library provides individual type constraint functions
 -- for decoding those values.
 auto :: FromJSON a => Decoder a
@@ -341,42 +428,6 @@ mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
 mapLazy :: Decoder a -> Decoder (ML.Map Text a)
 mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
 {-|# INLINE mapStrict #-}
-
-
--- Instances
-
-instance Functor Decoder where
-  fmap f (Decoder d) = Decoder $ fmap f . d
-  {-# INLINE fmap #-}
-
-instance Applicative Decoder where
-  pure val = Decoder $ \_ -> pure val
-  {-# INLINE pure #-}
-  (Decoder f') <*> (Decoder d) = Decoder $
-    \val ->
-        (\f -> fmap f (d val)) =<< f' val
-  {-# INLINE (<*>) #-}
-
-instance Monad Decoder where
-  (Decoder a) >>= f = Decoder $
-    \val -> case parse a val of
-      Success v -> let (Decoder res) = f v
-                   in res val
-      _ -> unexpected val
-  {-# INLINE (>>=) #-}
-#if !(MIN_VERSION_base(4,13,0))
-  fail = Fail.fail
-#endif
-
-instance Alternative Decoder where
-  empty = Decoder unexpected
-  {-# INLINE empty #-}
-  Decoder a <|> Decoder b = Decoder $ \v -> a v <|> b v
-  {-# INLINE (<|>) #-}
-
-instance MonadFail Decoder where
-  fail s = Decoder $ \_ -> Fail.fail s
-  {-# INLINE fail #-}
 
 
 -- Object Combinators
