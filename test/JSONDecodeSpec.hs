@@ -130,8 +130,13 @@ alternativeSpec =
 jsonNullSpec :: Spec
 jsonNullSpec =
   describe "jsonNull" $ do
+    let barDec txt =
+          case txt of
+            "bar" -> pure Bar
+            _     -> fail $ "Unknown value" <> show txt
+
     let (dec :: JD.Decoder FooBar) =
-          JD.jsonNull Foo <|> const Bar <$> JD.string
+          JD.jsonNull Foo <|> (barDec =<< JD.text)
 
     it "should decode Foo from null" $ do
       JD.decode dec "null" `shouldBe` (Just Foo)

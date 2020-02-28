@@ -18,7 +18,7 @@
 -- data wrappers just for sake of implementing instance
 -- of 'FromJSON'.
 -- This module provides value level 'Decoder' which can be used
--- to avoid this.
+-- instead of instance implementation.
 --
 module Data.Aeson.Combinators.Decode (
   -- * Example Usage
@@ -512,10 +512,10 @@ mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
 -- >
 -- > myDomainDecoder :: Decoder MyDomain
 -- > myDomainDecoder = jsonNull NotSet
--- >               <|> (text >>= fooBar)
+-- >               <|> (fooBar =<< text)
 -- >    where fooBar "foo"   = return Foo
 -- >          fooBar "bar"   = return Bar
--- >          fooBar unknown = fail $ "Unknown value " <> unknown
+-- >          fooBar unknown = fail $ "Unknown value " <> show unknown
 jsonNull :: a -> Decoder a
 jsonNull a = Decoder $ \case
   Null -> pure a
