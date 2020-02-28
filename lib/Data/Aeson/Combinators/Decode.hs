@@ -446,45 +446,61 @@ dayOfWeek :: Decoder DayOfWeek
 dayOfWeek = auto
 {-# INLINE dayOfWeek #-}
 
+
 -- Continer Decoders
 
-
+-- | Decode JSON null and other JSON value to 'Data.Maybe'.
+-- JSON null will be decoded to 'Nothing'.
+-- Other value decoded by provided 'Decoder' to 'Just a'
 nullable :: Decoder a -> Decoder (Maybe a)
 nullable (Decoder d) = Decoder $ \case
   Null  -> pure Nothing
   other -> Just <$> d other
 {-# INLINE nullable #-}
 
+-- | Decode JSON array of values to '[a]' of values
+-- using provided 'Decoder'.
 list :: Decoder a -> Decoder [a]
 list (Decoder d) = Decoder $
   listParser d
 {-# INLINE list #-}
 
+-- | Decode JSON array of values to 'Vector' of values
+-- using provided 'Decoder'.
 vector :: Decoder a -> Decoder (Vector a)
 vector (Decoder d) = Decoder $ \case
   Array v -> Vector.mapM d v
   other   -> typeMismatch "Array" other
 {-# INLINE vector #-}
 
-hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
-hashMapStrict (Decoder d) = Decoder $ \case
-  Object xs -> traverse d xs
-  val -> typeMismatch "Array" val
-{-|# INLINE hashMapStrict #-}
-
+-- | Decode JSON object to 'HL.HashMap' with 'Data.Text' key
+-- using provided 'Decoder'.
 hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
 hashMapLazy (Decoder d) = Decoder $ \case
   Object xs -> traverse d xs
   val -> typeMismatch "Array" val
 {-|# INLINE hashMapLazy #-}
 
+-- | Decode JSON object to 'HS.HashMap' with 'Data.Text' key
+-- using provided 'Decoder'.
+hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
+hashMapStrict (Decoder d) = Decoder $ \case
+  Object xs -> traverse d xs
+  val -> typeMismatch "Array" val
+{-|# INLINE hashMapStrict #-}
+
+-- | Decode JSON object to 'ML.Map' with 'Data.Text' key
+-- using provided 'Decoder'.
+mapLazy :: Decoder a -> Decoder (ML.Map Text a)
+mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
+{-|# INLINE mapStrict #-}
+
+-- | Decode JSON object to 'MS.Map' with 'Data.Text' key
+-- using provided 'Decoder'.
 mapStrict :: Decoder a -> Decoder (MS.Map Text a)
 mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
 {-|# INLINE mapStrict #-}
 
-mapLazy :: Decoder a -> Decoder (ML.Map Text a)
-mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
-{-|# INLINE mapStrict #-}
 
 -- Combinators
 
@@ -505,6 +521,7 @@ jsonNull a = Decoder $ \case
   Null -> pure a
   val    -> typeMismatch "null" val
 {-# INLINE jsonNull #-}
+
 
 -- Object Combinators
 
