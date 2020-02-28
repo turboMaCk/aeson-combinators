@@ -64,10 +64,13 @@ module Data.Aeson.Combinators.Decode (
   , at
 -- *** Arrays
   , index
+  , indexes
 -- *** Path
+-- $jsonpath
   , element
   , path
 -- * Running Decoders
+-- $running
 -- *** Decoding From Byte Strings
   , decode, decode'
   , eitherDecode, eitherDecode'
@@ -228,7 +231,7 @@ import           Prelude                    hiding (fail)
 -- > odd :: Decoder Int
 -- > odd = do
 -- >   val <- int
--- >   if val % 2 == 1
+-- >   if val `mod` 2 == 1
 -- >   then $ return val
 -- >   else fail $ "Expected odd value, got " <> show val
 --
@@ -506,13 +509,13 @@ mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
 
 -- | Decode JSON null to any value.
 -- This function is usefull if you have custom
--- constructor which should act with null representation in JSON
+-- constructor which represented by null in JSONs.
 --
--- > data MyDomain = NotSet | Foo | Bar
+-- > data Codomain = NotSet | Foo | Bar
 -- >
--- > myDomainDecoder :: Decoder MyDomain
+-- > myDomainDecoder :: Decoder Codomain
 -- > myDomainDecoder = jsonNull NotSet
--- >               <|> (fooBar =<< text)
+-- >               <|> (text >>= fooBar)
 -- >    where fooBar "foo"   = return Foo
 -- >          fooBar "bar"   = return Bar
 -- >          fooBar unknown = fail $ "Unknown value " <> show unknown
@@ -525,17 +528,28 @@ jsonNull a = Decoder $ \case
 
 -- Object Combinators
 
+-- | Extract JSON value from JSON object key
+--
+-- > >>> decode (key "data" int) "{\"data\": 42}"
+-- > Just 42
 key :: Text -> Decoder a -> Decoder a
 key t (Decoder d) = Decoder $ \case
   Object v -> d =<< v .: t
   val        -> typeMismatch "Object" val
 {-# INLINE key #-}
 
+-- | Extract JSON value from JSON object keys
+--
+-- > >>> decode (at ["data", "value"] int) "{\"data\": {\"value\": 42}}"
+-- > Just 42
 at :: [Text] -> Decoder a -> Decoder a
-at pth d =
-  foldr key d pth
+at pth d = foldr key d pth
 {-# INLINE at #-}
 
+-- | Extract JSON value from JSON array index
+--
+-- > >>> decode (index 2 int) "[0,1,2,3,4]"
+-- > Just 2
 index :: Int -> Decoder a -> Decoder a
 index i (Decoder d) = Decoder $ \val ->
   case val of
@@ -545,17 +559,47 @@ index i (Decoder d) = Decoder $ \val ->
     _         -> typeMismatch "Array" val
 {-# INLINE index #-}
 
+-- | Extract JSON value from JSON array indexes
+--
+-- > >>> decode (indexes [0,1,0] int) "[[true, [42]]]"
+-- > Just 42
+indexes :: [Int] -> Decoder a -> Decoder a
+indexes pth d = foldr index d pth
+{-# INLINE indexes #-}
+
+-- $jsonpath
+-- Combinators using Aeson's 'JSONPathElement' and 'JSONPath' types.
+-- This makes it possible to mix object keys and array index accessors.
+
+-- | Decode value from JSON structure.
+--
+-- From object key:
+--
+-- > >>> decode (element (Key "data") text) "{\"data\": \"foo\"}"
+-- > Just "foo"
+--
+-- From array index:
+--
+-- > >>> decode (element (Index 1) int) "[0,1,2]"
+-- > Just 1
 element :: JSONPathElement -> Decoder a -> Decoder a
 element (Key txt) = key txt
 element (Index i) = index i
 {-# INLINE element #-}
 
+-- | Decode value from deep JSON structure.
+--
+-- > >>> decode (path [Key "data", Index 0] bool) "{\"data\":[true, false, false]}"
+-- > Just True
 path :: JSONPath -> Decoder a -> Decoder a
 path pth d = foldr element d pth
 {-# INLINE path #-}
 
 
 -- Decoding
+
+-- $running
+-- TODO
 
 decode :: Decoder a -> LB.ByteString -> Maybe a
 decode (Decoder d) =
