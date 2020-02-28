@@ -44,8 +44,8 @@ import Data.Aeson.Types
 import qualified Data.Aeson.Combinators.Decode as ACD
 import GHC.Generics
 
-data Person = Person {
-      name :: Text
+data Person = Person
+    { name :: Text
     , age  :: Int
     } deriving (Generic, Show)
 
@@ -120,7 +120,7 @@ Aeson types and functions are reused where possible.
 
 ## TODO
 
-- [ ] Documentation
+- [x] Documentation
 - [x] Support for more GHC versions
 - [ ] Encoding API
 - [x] Default decoders for Containers
