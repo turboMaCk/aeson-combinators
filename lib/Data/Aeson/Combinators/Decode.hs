@@ -230,12 +230,12 @@ import           Prelude                    hiding (fail)
 -- >   val <- int
 -- >   if val % 2 == 1
 -- >   then $ return val
--- >   else Fail.fail $ "Expected odd value, got " <> show val -- Using Control.Monad.Fail
+-- >   else fail $ "Expected odd value, got " <> show val
 --
 -- > >>> eitherDecode odd "3"
 -- > Left 3
 -- > >>> eitherDecode odd "4"
--- > Right "Expected odd value, got 4"
+-- > Right "Error in $: Expected odd value, got 4"
 newtype Decoder a =
   Decoder (Value -> Parser a)
 
@@ -515,7 +515,7 @@ mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
 -- >               <|> (text >>= fooBar)
 -- >    where fooBar "foo"   = return Foo
 -- >          fooBar "bar"   = return Bar
--- >          fooBar unknown = Fail.fail $ "Unknown value " <> unknown -- using Control.Monad.Fail
+-- >          fooBar unknown = fail $ "Unknown value " <> unknown
 jsonNull :: a -> Decoder a
 jsonNull a = Decoder $ \case
   Null -> pure a
