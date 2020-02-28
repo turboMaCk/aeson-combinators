@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
+-- TODO: ADD Scrientific??
+
 -- |
 -- Module      : Data.Aeson.Cominators.Decode
 -- Copyright   : (c) Marek Fajkus
@@ -43,7 +45,9 @@ module Data.Aeson.Combinators.Decode (
   , char, text, string
   , uuid, version
 -- * Decoding Time
-  , zonedTime, localTime, timeOfDay, utcTime, day, dayOfWeek
+  , zonedTime, localTime, timeOfDay
+  , utcTime
+  , day, dayOfWeek
 -- * Decodeing Containers
 -- *** Maybe
   , nullable
@@ -299,31 +303,6 @@ bool :: Decoder Bool
 bool = auto
 {-# INLINE bool #-}
 
--- | Decode single character JSON string to 'Data.Char'
-char :: Decoder Char
-char = auto
-{-# INLINE char #-}
-
--- | Decode JSON string to 'Data.String'
-string :: Decoder String
-string = auto
-{-# INLINE string #-}
-
--- | Decode JSON string to 'Data.Text'
-text :: Decoder Text
-text = auto
-{-# INLINE text #-}
-
--- | Decode JSON string to 'Data.UUID.Types.UUID'
-uuid :: Decoder UUID
-uuid = auto
-{-# INLINE uuid #-}
-
--- | Decode JSON string to 'Data.Version'
-version :: Decoder Version
-version = auto
-
-{-# INLINE version #-}
 -- | Decode JSON number to 'Data.Int.Int'
 int :: Decoder Int
 int = auto
@@ -399,38 +378,76 @@ double :: Decoder Double
 double = auto
 {-# INLINE double #-}
 
+
+-- | Decode single character JSON string to 'Data.Char'
+char :: Decoder Char
+char = auto
+{-# INLINE char #-}
+
+-- | Decode JSON string to 'Data.String'
+string :: Decoder String
+string = auto
+{-# INLINE string #-}
+
+-- | Decode JSON string to 'Data.Text'
+text :: Decoder Text
+text = auto
+{-# INLINE text #-}
+
+-- | Decode JSON string to 'Data.UUID.Types.UUID'
+uuid :: Decoder UUID
+uuid = auto
+{-# INLINE uuid #-}
+
+-- | Decode JSON string to 'Data.Version'
+version :: Decoder Version
+version = auto
+{-# INLINE version #-}
+
+-- | Decode JSON string to 'Data.Local.Time.ZonedTime'
+-- using Aeson's instance implementation.
+--
+-- Supported string formats:
+--
+-- YYYY-MM-DD HH:MM Z YYYY-MM-DD HH:MM:SS Z YYYY-MM-DD HH:MM:SS.SSS Z
+--
+-- The first space may instead be a T, and the second space is optional. The Z represents UTC. The Z may be replaced with a time zone offset of the form +0000 or -08:00, where the first two digits are hours, the : is optional and the second two digits (also optional) are minutes.
 zonedTime :: Decoder ZonedTime
 zonedTime = auto
 {-# INLINE zonedTime #-}
 
+-- | Decode JSON string to 'Data.Local.Time.LocalTime'
+-- using Aeson's instance implementation.
 localTime :: Decoder LocalTime
 localTime = auto
 {-# INLINE localTime #-}
 
+-- | Decode JSON string to 'Data.Local.Time.TimeOfDay'
+-- using Aeson's instance implementation.
 timeOfDay :: Decoder TimeOfDay
 timeOfDay = auto
 {-# INLINE timeOfDay #-}
 
+-- | Decode JSON string to 'Data.Time.Clock.UTCTime'
+-- using Aesons's instance implementation
 utcTime :: Decoder UTCTime
 utcTime = auto
 {-# INLINE utcTime #-}
 
+-- | Decode JSON string to 'Data.Time.Calendar.Day'
+-- using Aesons's instance implementation
 day :: Decoder Day
 day = auto
 {-# INLINE day #-}
 
+-- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
+-- using Aesons's instance implementation
 dayOfWeek :: Decoder DayOfWeek
 dayOfWeek = auto
 {-# INLINE dayOfWeek #-}
 
-jsonNull :: a -> Decoder a
-jsonNull a = Decoder $ \case
-  Null -> pure a
-  val    -> typeMismatch "null" val
-{-# INLINE jsonNull #-}
-
-
 -- Continer Decoders
+
 
 nullable :: Decoder a -> Decoder (Maybe a)
 nullable (Decoder d) = Decoder $ \case
@@ -469,6 +486,25 @@ mapLazy :: Decoder a -> Decoder (ML.Map Text a)
 mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
 {-|# INLINE mapStrict #-}
 
+-- Combinators
+
+-- | Decode JSON null to any value.
+-- This function is usefull if you have custom
+-- constructor which should act with null representation in JSON
+--
+-- > data MyDomain = NotSet | Foo | Bar
+-- >
+-- > myDomainDecoder :: Decoder MyDomain
+-- > myDomainDecoder = jsonNull NotSet
+-- >               <|> (text >>= fooBar)
+-- >    where fooBar "foo"   = return Foo
+-- >          fooBar "bar"   = return Bar
+-- >          fooBar unknown = Fail.fail $ "Unknown value " <> unknown -- using Control.Monad.Fail
+jsonNull :: a -> Decoder a
+jsonNull a = Decoder $ \case
+  Null -> pure a
+  val    -> typeMismatch "null" val
+{-# INLINE jsonNull #-}
 
 -- Object Combinators
 
