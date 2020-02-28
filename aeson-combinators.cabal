@@ -39,6 +39,7 @@ library
                      , uuid-types
                      , containers
                      , unordered-containers
+                     , void
   hs-source-dirs: lib
   default-language:    Haskell2010
 

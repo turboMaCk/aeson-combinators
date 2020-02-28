@@ -15,6 +15,8 @@
 -- users of Aeson library to define proxy types and
 -- data wrappers just for sake of implementing instance
 -- of 'FromJSON'.
+-- This module provides value level 'Decoder' which can be used
+-- to avoid this.
 --
 module Data.Aeson.Combinators.Decode (
   -- * Example Usage
@@ -27,7 +29,8 @@ module Data.Aeson.Combinators.Decode (
 -- * Decoding Primitive Values
 --
 -- *** Void, Unit, Bool
-  , void, unit, bool
+  , void
+  , unit, bool
 -- *** Integers (and Natural)
   , int, integer, int8, int16, int32, int64
   , word, word8, word16, word32, word64
