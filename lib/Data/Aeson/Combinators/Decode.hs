@@ -41,6 +41,7 @@ module Data.Aeson.Combinators.Decode (
 #endif
 -- *** Floating Points
   , float, double
+  , scientific
 -- *** Strings
   , char, text, string
   , uuid, version
@@ -111,6 +112,7 @@ import qualified Data.HashMap.Lazy          as HL
 import qualified Data.HashMap.Strict        as HS
 import qualified Data.Map.Lazy              as ML
 import qualified Data.Map.Strict            as MS
+import           Data.Scientific            (Scientific)
 import           Data.Traversable           (traverse)
 import           Prelude                    hiding (fail)
 
@@ -381,6 +383,10 @@ double :: Decoder Double
 double = auto
 {-# INLINE double #-}
 
+-- | Decode JSON number to arbitrary precision 'Scientific'
+scientific :: Decoder Scientific
+scientific = auto
+{-# INLINE scientific #-}
 
 -- | Decode single character JSON string to 'Data.Char'
 char :: Decoder Char
@@ -524,9 +530,6 @@ jsonNull a = Decoder $ \case
   Null -> pure a
   val    -> typeMismatch "null" val
 {-# INLINE jsonNull #-}
-
-
--- Object Combinators
 
 -- | Extract JSON value from JSON object key
 --

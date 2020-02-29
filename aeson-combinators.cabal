@@ -42,6 +42,7 @@ library
                      , containers
                      , unordered-containers
                      , void
+                     , scientific
   hs-source-dirs:      lib
   default-language:    Haskell2010
 
