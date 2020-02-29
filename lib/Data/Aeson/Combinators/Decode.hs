@@ -26,7 +26,7 @@ module Data.Aeson.Combinators.Decode (
 
   -- ** Applicative "Elm Style" Decoders
   -- $applicative
-   Decoder(..)
+    Decoder(..)
   , auto
 -- * Decoding Primitive Values
 --
