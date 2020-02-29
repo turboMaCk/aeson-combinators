@@ -52,7 +52,7 @@ module Data.Aeson.Combinators.Decode (
   , nullable
 -- *** Sequences
   , list, vector
--- *** Hasmap
+-- *** Hashmap
   , hashMapLazy, hashMapStrict
 -- *** Map
   , mapLazy, mapStrict
@@ -162,7 +162,7 @@ import           Prelude                    hiding (fail)
 
 -- $applicative
 --
--- If you like elm style decoding you can avoid using 'FromJSON' type class all togher.
+-- If you like elm style decoding you can avoid using 'FromJSON' type class altogher.
 --
 -- > import Data.Text
 -- > import qualified Data.Aeson.Combinators.Decode as ACD
@@ -185,12 +185,12 @@ import           Prelude                    hiding (fail)
 
 -- | === JSON Decoder
 --
--- A value that describes how values are decoded from JSON.
+-- A value describing how other values are decoded from JSON.
 -- This type is an alternative to Aeson's 'FromJSON' instance implementation.
 --
 -- Use 'decode', 'decode', 'eitherDecode', 'eitherDecode''
 -- 'decodeStrict', 'decodeStrict'', 'eitherDecodeStrict' or 'eitherDecodeStrict''
--- alternatives provided by this module for decoding from 'BytString'.
+-- alternatives provided by this module for decoding from 'ByteString'.
 --
 -- For decoding files use
 -- 'decodeFileStrict', 'decodeFileStrict''
@@ -206,7 +206,7 @@ import           Prelude                    hiding (fail)
 -- > >>> decode intToString "2"
 -- > Just "2"
 --
--- __Applicateve to construct products__
+-- __Applicative to construct products__
 --
 -- > stringIntPair :: Decoder (String, Int)
 -- > stringIntPair = (,) <$> index 0 string
@@ -236,9 +236,9 @@ import           Prelude                    hiding (fail)
 -- >   else fail $ "Expected odd value, got " <> show val
 --
 -- > >>> eitherDecode odd "3"
--- > Left 3
+-- > Right 3
 -- > >>> eitherDecode odd "4"
--- > Right "Error in $: Expected odd value, got 4"
+-- > Left "Error in $: Expected odd value, got 4"
 newtype Decoder a =
   Decoder (Value -> Parser a)
 
@@ -283,7 +283,7 @@ instance MonadFail Decoder where
 --
 -- While 'auto' is universally usable for all primitive values,
 -- this library provides individual type constraint functions
--- for decoding those values.
+-- for decoding most common primitives and combinators for decoding larger structure from these primitives.
 auto :: FromJSON a => Decoder a
 auto = Decoder parseJSON
 {-# INLINE auto #-}
@@ -512,8 +512,8 @@ mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
 -- Combinators
 
 -- | Decode JSON null to any value.
--- This function is usefull if you have custom
--- constructor which represented by null in JSONs.
+-- This function is useful for decoding
+-- constructors which represented by null in JSON.
 --
 -- > data Codomain = NotSet | Foo | Bar
 -- >
@@ -570,7 +570,7 @@ indexes pth d = foldr index d pth
 
 -- $jsonpath
 -- Combinators using Aeson's 'JSONPathElement' and 'JSONPath' types.
--- This makes it possible to mix object keys and array index accessors.
+-- This makes it possible to combine object keys and array index accessors.
 
 -- | Decode value from JSON structure.
 --
@@ -601,10 +601,11 @@ path pth d = foldr element d pth
 
 -- $running
 --
--- Following functions are evivalent to the one provided by Aeson.
--- The only difference is versions provided by Aeson
--- for with 'FromJSON' instances while these use 'Decoder' type
--- instead.
+-- Following functions are evivalent to ones provided by Aeson itself.
+-- The only difference is that versions implemented by Aeson
+-- work only with instances of 'FromJSON' class.
+-- Functions defines in this module are using 'Decoder' argument
+-- instead of instance implementation.
 
 -- | Efficiently deserialize a JSON value from a lazy 'L.ByteString'.
 -- If this fails due to incomplete or invalid input, 'Nothing' is
