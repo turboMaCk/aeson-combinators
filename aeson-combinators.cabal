@@ -4,8 +4,7 @@ version:             0.0.1.0
 synopsis:            Aeson combinators for dead simple JSON decoding
 description:
     This library defines low overhead value space `Decoder`
-    on top of Aeson Parser for less restricted and more compositional style
-    of writing Decoders.
+    on top of Aeson's Parser for combinator style decoding.
 
 bug-reports:         https://github.com/turboMaCk/aeson-combinators/issues
 license:             BSD3

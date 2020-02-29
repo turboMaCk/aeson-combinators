@@ -3,8 +3,7 @@
 [![Build Status](https://travis-ci.org/turboMaCk/aeson-combinators.svg?branch=master)](https://travis-ci.org/turboMaCk/aeson-combinators)
 
 This library defines [**low overhead**](#internals) value space `Decoder`
-on top of Aeson Parser for simpler, less restricted and more compositional style
-of writing JSON Decoders.
+on top of Aeson's Parser for combinator style decoding.
 
 __Encoding to JSON is currently not supported but might be added in the future version.__
 

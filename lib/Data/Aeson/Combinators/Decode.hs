@@ -1,8 +1,6 @@
 {-# LANGUAGE CPP        #-}
 {-# LANGUAGE LambdaCase #-}
 
--- TODO: ADD Scrientific??
-
 -- |
 -- Module      : Data.Aeson.Cominators.Decode
 -- Copyright   : (c) Marek Fajkus
