@@ -22,7 +22,7 @@ tested-with:         GHC == 7.10.3
                    , GHC == 7.6.3
                    , GHC == 8.4.4
                    , GHC == 8.6.5
-                   , GHCjs == 8.6.4
+                   , GHCJS == 8.6.4
 
 library
   exposed-modules:     Data.Aeson.Combinators.Decode

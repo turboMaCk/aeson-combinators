@@ -748,15 +748,16 @@ eitherFormatError :: Either (JSONPath, String) a -> Either String a
 eitherFormatError = either (Left . uncurry AI.formatError) Right
 {-# INLINE eitherFormatError #-}
 
--- This function is not exposed in aeson 1.4.2.0
--- This implementation is copied from
+#if (MIN_VERSION_aeson(1,4,3))
+#else
+-- These functions are not exposed in aeson 1.4.2.0
+-- implementation is copied from
 -- https://hackage.haskell.org/package/aeson-1.4.6.0/docs/src/Data.Aeson.Types.FromJSON.html#unexpected
+
 unexpected :: Value -> Parser a
 unexpected actual = Fail.fail $ "unexpected " ++ typeOf actual
+{-# INLINE unexpected #-}
 
--- This function is not exposed in aeson 1.4.2.0
--- This implementation is copied from
--- https://hackage.haskell.org/package/aeson-1.4.6.0/docs/src/Data.Aeson.Types.FromJSON.html#typeOf
 typeOf :: Value -> String
 typeOf v = case v of
     Object _ -> "Object"
@@ -765,3 +766,6 @@ typeOf v = case v of
     Number _ -> "Number"
     Bool _   -> "Boolean"
     Null     -> "Null"
+{-# INLINE typeOf #-}
+
+#endif
