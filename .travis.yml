@@ -1,4 +1,6 @@
 language: haskell
+ghcjs:
+  - "8.6.4"
 ghc:
   - "7.10"
   - "7.8"
