@@ -46,7 +46,8 @@ module Data.Aeson.Combinators.Decode (
 -- * Decoding Time
   , zonedTime, localTime, timeOfDay
   , utcTime
-  , day, dayOfWeek
+  , day
+-- , dayOfWeek
 -- * Decodeing Containers
 -- *** Maybe
   , nullable
@@ -84,6 +85,7 @@ import           Control.Applicative
 import           Control.Monad              hiding (void)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
+import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
@@ -93,7 +95,7 @@ import qualified Data.ByteString.Lazy       as LB
 import           Data.Int                   (Int16, Int32, Int64, Int8)
 import           Data.Text                  (Text)
 import           Data.Time.Calendar         (Day)
-import           Data.Time.Calendar.Compat  (DayOfWeek)
+-- import           Data.Time.Calendar.Compat  (DayOfWeek)
 import           Data.Time.Clock            (UTCTime)
 import           Data.Time.LocalTime        (LocalTime, TimeOfDay, ZonedTime)
 import           Data.UUID.Types            (UUID)
@@ -447,11 +449,11 @@ day :: Decoder Day
 day = auto
 {-# INLINE day #-}
 
--- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
--- using Aesons's instance implementation
-dayOfWeek :: Decoder DayOfWeek
-dayOfWeek = auto
-{-# INLINE dayOfWeek #-}
+-- -- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
+-- -- using Aesons's instance implementation
+-- dayOfWeek :: Decoder DayOfWeek
+-- dayOfWeek = auto
+-- {-# INLINE dayOfWeek #-}
 
 
 -- Continer Decoders
@@ -736,13 +738,24 @@ eitherDecodeFileStrict' dec =
 
 -- Private functions Aeson doesn't expose
 
--- | Annotate an error message with a
--- <http://goessner.net/articles/JsonPath/ JSONPath> error location.
-formatError :: JSONPath -> String -> String
-formatError pth msg =
-  "Error in " ++ formatPath pth ++ ": " ++ msg
-{-# INLINE formatError #-}
-
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
-eitherFormatError = either (Left . uncurry formatError) Right
+eitherFormatError = either (Left . uncurry AI.formatError) Right
 {-# INLINE eitherFormatError #-}
+
+-- This function is not exposed in aeson 1.4.2.0
+-- This implementation is copied from
+-- https://hackage.haskell.org/package/aeson-1.4.6.0/docs/src/Data.Aeson.Types.FromJSON.html#unexpected
+unexpected :: Value -> Parser a
+unexpected actual = Fail.fail $ "unexpected " ++ typeOf actual
+
+-- This function is not exposed in aeson 1.4.2.0
+-- This implementation is copied from
+-- https://hackage.haskell.org/package/aeson-1.4.6.0/docs/src/Data.Aeson.Types.FromJSON.html#typeOf
+typeOf :: Value -> String
+typeOf v = case v of
+    Object _ -> "Object"
+    Array _  -> "Array"
+    String _ -> "String"
+    Number _ -> "Number"
+    Bool _   -> "Boolean"
+    Null     -> "Null"
