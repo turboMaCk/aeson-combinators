@@ -1,3 +1,4 @@
+{ nixpkgs ? import <nixpkgs> }:
 let
   config = {
     packageOverrides = pkgs: rec {
@@ -9,7 +10,7 @@ let
         };
     };
   };
-  pkgs = import <nixpkgs> { inherit config; };
+  pkgs = nixpkgs { inherit config; };
 
   # Using miso's ghcjs
   # cachix use miso-haskell
