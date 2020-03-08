@@ -89,7 +89,7 @@ import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
-import           Data.Aeson.Types
+import           Data.Aeson.Types           hiding (unexpected)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
 import           Data.Int                   (Int16, Int32, Int64, Int8)
