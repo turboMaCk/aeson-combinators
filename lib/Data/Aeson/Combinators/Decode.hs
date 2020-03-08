@@ -48,7 +48,7 @@ module Data.Aeson.Combinators.Decode (
   , utcTime
   , day
 #if (MIN_VERSION_time_compat(1,9,2))
-, dayOfWeek
+  , dayOfWeek
 #endif
 -- * Decodeing Containers
 -- *** Maybe
@@ -456,6 +456,8 @@ day = auto
 #if (MIN_VERSION_time_compat(1,9,2))
 -- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
 -- using Aesons's instance implementation
+--
+-- This function requires 'time-compat' >= 1.9.2
 dayOfWeek :: Decoder DayOfWeek
 dayOfWeek = auto
 {-# INLINE dayOfWeek #-}
@@ -750,6 +752,7 @@ eitherFormatError = either (Left . uncurry AI.formatError) Right
 
 #if (MIN_VERSION_aeson(1,4,3))
 #else
+
 -- These functions are not exposed in aeson 1.4.2.0
 -- implementation is copied from
 -- https://hackage.haskell.org/package/aeson-1.4.6.0/docs/src/Data.Aeson.Types.FromJSON.html#unexpected
