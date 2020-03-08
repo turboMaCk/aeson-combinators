@@ -5,6 +5,8 @@
 This library defines [**low overhead**](#internals) value space `Decoder`
 on top of Aeson's Parser for combinator style decoding.
 
+This library is compatible with GHC **7.6** and later as well as recent versions of **GHCJS**.
+
 __Encoding to JSON is currently not supported but might be added in the future version.__
 
 I wrote a [blob post](https://turbomack.github.io/posts/2020-02-21-value-space-decoding-for-aeson.html)
