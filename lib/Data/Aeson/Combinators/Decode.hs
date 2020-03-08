@@ -47,7 +47,9 @@ module Data.Aeson.Combinators.Decode (
   , zonedTime, localTime, timeOfDay
   , utcTime
   , day
--- , dayOfWeek
+#if (MIN_VERSION_time_compat(1,9,2))
+, dayOfWeek
+#endif
 -- * Decodeing Containers
 -- *** Maybe
   , nullable
@@ -95,7 +97,9 @@ import qualified Data.ByteString.Lazy       as LB
 import           Data.Int                   (Int16, Int32, Int64, Int8)
 import           Data.Text                  (Text)
 import           Data.Time.Calendar         (Day)
--- import           Data.Time.Calendar.Compat  (DayOfWeek)
+#if (MIN_VERSION_time_compat(1,9,2))
+import           Data.Time.Calendar.Compat  (DayOfWeek)
+#endif
 import           Data.Time.Clock            (UTCTime)
 import           Data.Time.LocalTime        (LocalTime, TimeOfDay, ZonedTime)
 import           Data.UUID.Types            (UUID)
@@ -449,11 +453,13 @@ day :: Decoder Day
 day = auto
 {-# INLINE day #-}
 
--- -- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
--- -- using Aesons's instance implementation
--- dayOfWeek :: Decoder DayOfWeek
--- dayOfWeek = auto
--- {-# INLINE dayOfWeek #-}
+#if (MIN_VERSION_time_compat(1,9,2))
+-- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
+-- using Aesons's instance implementation
+dayOfWeek :: Decoder DayOfWeek
+dayOfWeek = auto
+{-# INLINE dayOfWeek #-}
+#endif
 
 
 -- Continer Decoders
