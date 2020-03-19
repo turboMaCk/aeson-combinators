@@ -34,7 +34,7 @@ field :: Text -> Encoder b -> (a -> b) -> KeyValueEncoder a
 field name (Encoder enc) get = \v -> (name, enc $ get v)
 
 object :: [KeyValueEncoder a] -> Encoder a
-object xs = Encoder $ \val -> Aeson.object $ (\f -> f val) <$> xs
+object xs = Encoder $ \val -> Aeson.object $ fmap (\f -> f val) xs
 
 type KeyValuesEncoder' a = a -> [(Text, Value)]
 
