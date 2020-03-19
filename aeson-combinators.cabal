@@ -45,6 +45,7 @@ library
                      , unordered-containers
                      , void
                      , scientific
+                     , contravariant
   hs-source-dirs:      lib
   default-language:    Haskell2010
 
@@ -53,6 +54,7 @@ test-suite spec
     hs-source-dirs:    test
     main-is:           Spec.hs
     other-modules:     JSONDecodeSpec
+                     , JSONEncodeSpec
     build-depends:     base
                      , hspec
                      , aeson-combinators
