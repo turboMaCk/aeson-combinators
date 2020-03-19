@@ -27,7 +27,7 @@ objectEncoder' = JE.object' $ \(Object {..}) ->
 
 encodePrimitives :: Spec
 encodePrimitives = describe "primitives" $ do
-  it "this fails" $ do
+  it "encode bool" $ do
     JE.encode JE.auto True `shouldBe` "true"
 
 objectEncoding :: Spec
