@@ -27,6 +27,7 @@ tested-with:         GHC == 7.10.3
 
 library
   exposed-modules:     Data.Aeson.Combinators.Decode
+                     , Data.Aeson.Combinators.Encode
   -- other-modules:
   -- other-extensions:
   build-depends:       base >= 4 && < 5
