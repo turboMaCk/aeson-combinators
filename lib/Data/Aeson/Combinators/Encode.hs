@@ -18,6 +18,7 @@ import qualified Data.Aeson.Encoding        as E
 import qualified Data.ByteString.Lazy       as BS
 import           Data.Functor.Contravariant
 import           Data.Text                  (Text)
+import           Data.Vector                (Vector, fromList)
 
 
 newtype Encoder a = Encoder (a -> Value)
@@ -27,6 +28,10 @@ auto = Encoder Aeson.toJSON
 
 instance Contravariant Encoder where
   contramap f (Encoder enc) = Encoder (enc . f)
+
+-- Combinators
+
+newtype Id a = Id { runIdentity :: a }
 
 type KeyValueEncoder a = a -> (Text, Value)
 
@@ -44,8 +49,11 @@ field' name (Encoder enc) val = (name, enc val)
 object' :: KeyValuesEncoder' a -> Encoder a
 object' f = Encoder $ \val -> Aeson.object $ f val
 
--- Combinators
+vector :: Encoder a -> Encoder (Vector a)
+vector (Encoder f) = Encoder $ \val -> Aeson.Array $ f <$> val
 
+list :: Encoder a -> Encoder [a]
+list (Encoder f) = Encoder $ \val -> Aeson.Array $ fromList $ f <$> val
 
 -- Encode
 

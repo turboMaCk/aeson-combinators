@@ -45,7 +45,6 @@ library
                      , unordered-containers
                      , void
                      , scientific
-                     , contravariant
   hs-source-dirs:      lib
   default-language:    Haskell2010
 
