@@ -12,13 +12,16 @@
 --
 module Data.Aeson.Combinators.Encode where
 
-import           Data.Aeson                 (ToJSON, Value)
-import qualified Data.Aeson                 as Aeson
-import qualified Data.Aeson.Encoding        as E
-import qualified Data.ByteString.Lazy       as BS
+import           Data.Aeson                           (ToJSON, Value (..))
+import qualified Data.Aeson                           as Aeson
+import qualified Data.Aeson.Encoding                  as E
+import qualified Data.ByteString.Lazy                 as BS
 import           Data.Functor.Contravariant
-import           Data.Text                  (Text)
-import           Data.Vector                (Vector, fromList)
+import           Data.Functor.Contravariant.Divisible
+import           Data.Text                            (Text)
+import           Data.Vector                          (Vector, fromList)
+import qualified Data.Vector                          as Vector
+import           Data.Void                            (absurd)
 
 
 newtype Encoder a = Encoder (a -> Value)
@@ -28,6 +31,23 @@ auto = Encoder Aeson.toJSON
 
 instance Contravariant Encoder where
   contramap f (Encoder enc) = Encoder (enc . f)
+
+instance Divisible Encoder where
+  conquer = Encoder (const Null)
+
+  divide toPair (Encoder encA) (Encoder encB) = Encoder $ \val ->
+    case toPair val of
+      (a, b) -> Array $ Vector.fromList [ encA a, encB b ]
+
+instance Decidable Encoder where
+  lose f = Encoder $ absurd . f
+
+  choose split (Encoder encL) (Encoder encR) =
+      Encoder $ \val ->
+          case split val of
+            Left l -> encL l
+            Right r -> encR r
+
 
 -- Combinators
 
