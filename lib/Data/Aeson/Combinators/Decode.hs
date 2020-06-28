@@ -261,6 +261,7 @@ instance Applicative Decoder where
   {-# INLINE (<*>) #-}
 
 instance Monad Decoder where
+  return = pure
   (Decoder a) >>= f = Decoder $
     \val -> case parse a val of
       Success v -> let (Decoder res) = f v
