@@ -20,7 +20,7 @@ objectEncoder = JE.object
   ]
 
 objectEncoder' :: JE.Encoder Object
-objectEncoder' = JE.object' $ \(Object {..}) ->
+objectEncoder' = JE.object' $ \Object {..} ->
   [ JE.field' "name" JE.auto name
   , JE.field' "age" JE.auto age
   ]
@@ -42,7 +42,13 @@ objectEncoding = do
     it "should encode using explicit style encoding" $ do
       JE.encode objectEncoder' object `shouldBe` json
 
+listSpec :: Spec
+listSpec = describe "list encoding" $ do
+  it "encodes list of bools" $ do
+    JE.encode (JE.list JE.auto) [True, False] `shouldBe` "[true,false]"
+
 spec :: Spec
 spec = do
   encodePrimitives
   objectEncoding
+  listSpec
