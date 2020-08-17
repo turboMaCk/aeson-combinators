@@ -12,6 +12,7 @@
 --
 module Data.Aeson.Combinators.Encode where
 
+import           Control.Applicative
 import           Data.Aeson                           (ToJSON, Value (..))
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Aeson.Encoding                  as E
@@ -45,7 +46,7 @@ instance Decidable Encoder where
   choose split (Encoder encL) (Encoder encR) =
       Encoder $ \val ->
           case split val of
-            Left l -> encL l
+            Left l  -> encL l
             Right r -> encR r
 
 
