@@ -23,6 +23,7 @@ tested-with:         GHC == 7.10.3
                    , GHC == 7.6.3
                    , GHC == 8.4.4
                    , GHC == 8.6.5
+                   , GHC == 8.8.4
                    , GHCJS == 8.6.0.1
 
 library
