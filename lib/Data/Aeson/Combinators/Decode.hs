@@ -99,6 +99,7 @@ import           Data.Aeson.Types
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
 import           Data.Int                   (Int16, Int32, Int64, Int8)
+import           Data.List.NonEmpty         (NonEmpty(..))
 import           Data.Text                  (Text)
 import           Data.Time.Calendar         (Day)
 #if (MIN_VERSION_time_compat(1,9,2))
@@ -652,10 +653,9 @@ either (Decoder d) =
 -- > Just (Right False)
 -- > >>> decode (oneOf [Right <$> bool, return (Left "Not a boolean")]) "42"
 -- > Just (Left "Not a boolean")
-oneOf :: [Decoder a] -> Decoder a
-oneOf [] = Fail.fail "No decoders provided."
-oneOf decoders =
-  foldr1 (<|>) decoders
+oneOf :: NonEmpty (Decoder a) -> Decoder a
+oneOf (first :| rest) =
+  foldr (<|>) first rest
 {-# INLINE oneOf #-}
 
 -- Decoding
