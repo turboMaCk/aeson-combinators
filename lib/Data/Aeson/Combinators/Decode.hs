@@ -50,7 +50,7 @@ module Data.Aeson.Combinators.Decode (
 #if (MIN_VERSION_time_compat(1,9,2))
   , dayOfWeek
 #endif
--- * Decodeing Containers
+-- * Decoding Containers
 -- *** Maybe
   , nullable
 -- *** Sequences
@@ -71,6 +71,10 @@ module Data.Aeson.Combinators.Decode (
 -- $jsonpath
   , element
   , path
+-- *** Dealing With Failure
+  , maybe
+  , either
+  , oneOf
 -- * Running Decoders
 -- $running
 -- *** Decoding From Byte Strings
@@ -95,6 +99,7 @@ import           Data.Aeson.Types
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
 import           Data.Int                   (Int16, Int32, Int64, Int8)
+import           Data.List.NonEmpty         (NonEmpty(..))
 import           Data.Text                  (Text)
 import           Data.Time.Calendar         (Day)
 #if (MIN_VERSION_time_compat(1,9,2))
@@ -118,7 +123,8 @@ import qualified Data.Map.Lazy              as ML
 import qualified Data.Map.Strict            as MS
 import           Data.Scientific            (Scientific)
 import           Data.Traversable           (traverse)
-import           Prelude                    hiding (fail)
+import qualified Prelude                    (either)
+import           Prelude                    hiding (fail, maybe, either)
 
 -- $usage
 -- As mentioned above, combinators and type classes can be used together.
@@ -607,6 +613,50 @@ path :: JSONPath -> Decoder a -> Decoder a
 path pth d = foldr element d pth
 {-# INLINE path #-}
 
+-- | Try a decoder and get back a 'Just a' if it succeeds and 'Nothing' if it fails.
+-- In other words, this decoder always succeeds with a 'Maybe a' value.
+--
+-- > >>> decode (maybe string) "42"
+-- > Just Nothing
+-- > >>> decode (maybe int) "42"
+-- > Just (Just 42)
+maybe :: Decoder a -> Decoder (Maybe a)
+maybe (Decoder d) =
+  Decoder $ \val ->
+    case parse d val of
+      Success x -> pure (Just x)
+      Error _ -> pure Nothing
+{-# INLINE maybe #-}
+
+-- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
+-- In other words, this decoder always succeeds with an 'Either String a' value.
+--
+-- > >>> decode (either string) "42"
+-- > Just (Left "expected String, but encountered Number")
+-- > >>> decode (either int) "42"
+-- > Just (Right 42)
+either :: Decoder a -> Decoder (Either String a)
+either (Decoder d) =
+  Decoder $ \val ->
+    case parse d val of
+      Success x -> pure (Right x)
+      Error err -> pure (Left err)
+{-# INLINE either #-}
+
+-- | Try a number of decoders in order and return the first success.
+--
+-- > >>> decode (oneOf [words <$> string, list string]) "\"Hello world!\""
+-- > Just ["Hello", "world!"]
+-- > >>> decode (oneOf [words <$> string, list string]) "[\"Hello world!\"]"
+-- > Just ["Hello world!"]
+-- > >>> decode (oneOf [Right <$> bool, return (Left "Not a boolean")]) "false"
+-- > Just (Right False)
+-- > >>> decode (oneOf [Right <$> bool, return (Left "Not a boolean")]) "42"
+-- > Just (Left "Not a boolean")
+oneOf :: NonEmpty (Decoder a) -> Decoder a
+oneOf (first :| rest) =
+  foldr (<|>) first rest
+{-# INLINE oneOf #-}
 
 -- Decoding
 
@@ -748,7 +798,7 @@ eitherDecodeFileStrict' dec =
 -- Private functions Aeson doesn't expose
 
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
-eitherFormatError = either (Left . uncurry AI.formatError) Right
+eitherFormatError = Prelude.either (Left . uncurry AI.formatError) Right
 {-# INLINE eitherFormatError #-}
 
 #if (MIN_VERSION_aeson(1,4,3))
