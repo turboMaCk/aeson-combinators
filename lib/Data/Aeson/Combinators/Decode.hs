@@ -622,8 +622,8 @@ jsonMaybe :: Decoder a -> Decoder (Maybe a)
 jsonMaybe (Decoder d) =
   Decoder $ \val ->
     case parse d val of
-      Success x -> return (Just x)
-      Error _ -> return Nothing
+      Success x -> pure (Just x)
+      Error _ -> pure Nothing
 {-# INLINE jsonMaybe #-}
 
 -- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
@@ -637,8 +637,8 @@ jsonEither :: Decoder a -> Decoder (Either String a)
 jsonEither (Decoder d) =
   Decoder $ \val ->
     case parse d val of
-      Success x -> return (Right x)
-      Error err -> return (Left err)
+      Success x -> pure (Right x)
+      Error err -> pure (Left err)
 {-# INLINE jsonEither #-}
 
 -- | Try a number of decoders in order and return the first success.
