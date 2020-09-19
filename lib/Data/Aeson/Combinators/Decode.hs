@@ -72,8 +72,8 @@ module Data.Aeson.Combinators.Decode (
   , element
   , path
 -- *** Dealing With Failure
-  , jsonMaybe
-  , jsonEither
+  , maybe
+  , either
   , oneOf
 -- * Running Decoders
 -- $running
@@ -122,7 +122,8 @@ import qualified Data.Map.Lazy              as ML
 import qualified Data.Map.Strict            as MS
 import           Data.Scientific            (Scientific)
 import           Data.Traversable           (traverse)
-import           Prelude                    hiding (fail)
+import qualified Prelude                    (either)
+import           Prelude                    hiding (fail, maybe, either)
 
 -- $usage
 -- As mentioned above, combinators and type classes can be used together.
@@ -614,32 +615,32 @@ path pth d = foldr element d pth
 -- | Try a decoder and get back a 'Just a' if it succeeds and 'Nothing' if it fails.
 -- In other words, this decoder always succeeds with a 'Maybe a' value.
 --
--- > >>> decode (jsonMaybe string) "42"
+-- > >>> decode (maybe string) "42"
 -- > Just Nothing
--- > >>> decode (jsonMaybe int) "42"
+-- > >>> decode (maybe int) "42"
 -- > Just (Just 42)
-jsonMaybe :: Decoder a -> Decoder (Maybe a)
-jsonMaybe (Decoder d) =
+maybe :: Decoder a -> Decoder (Maybe a)
+maybe (Decoder d) =
   Decoder $ \val ->
     case parse d val of
       Success x -> pure (Just x)
       Error _ -> pure Nothing
-{-# INLINE jsonMaybe #-}
+{-# INLINE maybe #-}
 
 -- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
 -- In other words, this decoder always succeeds with an 'Either String a' value.
 --
--- > >>> decode (jsonEither string) "42"
+-- > >>> decode (either string) "42"
 -- > Just (Left "expected String, but encountered Number")
--- > >>> decode (jsonEither int) "42"
+-- > >>> decode (either int) "42"
 -- > Just (Right 42)
-jsonEither :: Decoder a -> Decoder (Either String a)
-jsonEither (Decoder d) =
+either :: Decoder a -> Decoder (Either String a)
+either (Decoder d) =
   Decoder $ \val ->
     case parse d val of
       Success x -> pure (Right x)
       Error err -> pure (Left err)
-{-# INLINE jsonEither #-}
+{-# INLINE either #-}
 
 -- | Try a number of decoders in order and return the first success.
 --
@@ -797,7 +798,7 @@ eitherDecodeFileStrict' dec =
 -- Private functions Aeson doesn't expose
 
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
-eitherFormatError = either (Left . uncurry AI.formatError) Right
+eitherFormatError = Prelude.either (Left . uncurry AI.formatError) Right
 {-# INLINE eitherFormatError #-}
 
 #if (MIN_VERSION_aeson(1,4,3))
