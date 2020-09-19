@@ -50,7 +50,7 @@ module Data.Aeson.Combinators.Decode (
 #if (MIN_VERSION_time_compat(1,9,2))
   , dayOfWeek
 #endif
--- * Decodeing Containers
+-- * Decoding Containers
 -- *** Maybe
   , nullable
 -- *** Sequences
@@ -71,6 +71,10 @@ module Data.Aeson.Combinators.Decode (
 -- $jsonpath
   , element
   , path
+-- *** Dealing With Failure
+  , jsonMaybe
+  , jsonEither
+  , oneOf
 -- * Running Decoders
 -- $running
 -- *** Decoding From Byte Strings
@@ -607,6 +611,51 @@ path :: JSONPath -> Decoder a -> Decoder a
 path pth d = foldr element d pth
 {-# INLINE path #-}
 
+-- | Try a decoder and get back a 'Just a' if it succeeds and 'Nothing' if it fails.
+-- In other words, this decoder always succeeds with a 'Maybe a' value.
+--
+-- > >>> decode (jsonMaybe string) "42"
+-- > Just Nothing
+-- > >>> decode (jsonMaybe int) "42"
+-- > Just (Just 42)
+jsonMaybe :: Decoder a -> Decoder (Maybe a)
+jsonMaybe (Decoder d) =
+  Decoder $ \val ->
+    case parse d val of
+      Success x -> return (Just x)
+      Error _ -> return Nothing
+{-# INLINE jsonMaybe #-}
+
+-- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
+-- In other words, this decoder always succeeds with an 'Either String a' value.
+--
+-- > >>> decode (jsonEither string) "42"
+-- > Just (Left "expected String, but encountered Number")
+-- > >>> decode (jsonEither int) "42"
+-- > Just (Right 42)
+jsonEither :: Decoder a -> Decoder (Either String a)
+jsonEither (Decoder d) =
+  Decoder $ \val ->
+    case parse d val of
+      Success x -> return (Right x)
+      Error err -> return (Left err)
+{-# INLINE jsonEither #-}
+
+-- | Try a number of decoders in order and return the first success.
+--
+-- > >>> decode (oneOf [words <$> string, list string]) "\"Hello world!\""
+-- > Just ["Hello", "world!"]
+-- > >>> decode (oneOf [words <$> string, list string]) "[\"Hello world!\"]"
+-- > Just ["Hello world!"]
+-- > >>> decode (oneOf [Right <$> bool, return (Left "Not a boolean")]) "false"
+-- > Just (Right False)
+-- > >>> decode (oneOf [Right <$> bool, return (Left "Not a boolean")]) "42"
+-- > Just (Left "Not a boolean")
+oneOf :: [Decoder a] -> Decoder a
+oneOf [] = Fail.fail "No decoders provided."
+oneOf decoders =
+  foldr1 (<|>) decoders
+{-# INLINE oneOf #-}
 
 -- Decoding
 
