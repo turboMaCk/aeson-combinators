@@ -5,3 +5,9 @@ ghc:
   - "7.6"
   - "8.4.4"
   - "8.6"
+
+before_install:
+  - cabal install doctest
+
+before_script:
+  - doctest lib/Data/Aeson/Combinators/Decode.hs

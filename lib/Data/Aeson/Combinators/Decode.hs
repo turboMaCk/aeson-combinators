@@ -130,8 +130,9 @@ import           Prelude                    hiding (fail, maybe, either)
 -- As mentioned above, combinators and type classes can be used together.
 --
 -- __Decode type nested in json__
+-- >>> :set -XOverloadedStrings
+-- >>> :set -XDeriveGeneric
 --
--- > {-# LANGUAGE DeriveGeneric #-}
 -- > import Data.Text
 -- > import Data.ByteString.Lazy (ByteString)
 -- > import Data.Aeson.Types
@@ -148,7 +149,6 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > decodeEmbededPerson :: [Text] -> ByteString -> Maybe Person
 -- > decodeEmbededPerson path json =
 -- >     ACD.decode (ACD.at path ACD.auto) json
--- >
 --
 -- Now we can extract Person from any key within the json.
 --
@@ -548,8 +548,8 @@ jsonNull a = Decoder $ \case
 
 -- | Extract JSON value from JSON object key
 --
--- > >>> decode (key "data" int) "{\"data\": 42}"
--- > Just 42
+-- >>> decode (key "data" int) "{\"data\": 42}"
+-- Just 42
 key :: Text -> Decoder a -> Decoder a
 key t (Decoder d) = Decoder $ \case
   Object v -> d =<< v .: t
@@ -558,16 +558,16 @@ key t (Decoder d) = Decoder $ \case
 
 -- | Extract JSON value from JSON object keys
 --
--- > >>> decode (at ["data", "value"] int) "{\"data\": {\"value\": 42}}"
--- > Just 42
+-- >>> decode (at ["data", "value"] int) "{\"data\": {\"value\": 42}}"
+-- Just 42
 at :: [Text] -> Decoder a -> Decoder a
 at pth d = foldr key d pth
 {-# INLINE at #-}
 
 -- | Extract JSON value from JSON array index
 --
--- > >>> decode (index 2 int) "[0,1,2,3,4]"
--- > Just 2
+-- >>> decode (index 2 int) "[0,1,2,3,4]"
+-- Just 2
 index :: Int -> Decoder a -> Decoder a
 index i (Decoder d) = Decoder $ \val ->
   case val of
@@ -593,13 +593,13 @@ indexes pth d = foldr index d pth
 --
 -- From object key:
 --
--- > >>> decode (element (Key "data") text) "{\"data\": \"foo\"}"
--- > Just "foo"
+-- >>> decode (element (Key "data") text) "{\"data\": \"foo\"}"
+-- Just "foo"
 --
 -- From array index:
 --
--- > >>> decode (element (Index 1) int) "[0,1,2]"
--- > Just 1
+-- >>> decode (element (Index 1) int) "[0,1,2]"
+-- Just 1
 element :: JSONPathElement -> Decoder a -> Decoder a
 element (Key txt) = key txt
 element (Index i) = index i
@@ -607,8 +607,8 @@ element (Index i) = index i
 
 -- | Decode value from deep JSON structure.
 --
--- > >>> decode (path [Key "data", Index 0] bool) "{\"data\":[true, false, false]}"
--- > Just True
+-- >>> decode (path [Key "data", Index 0] bool) "{\"data\":[true, false, false]}"
+-- Just True
 path :: JSONPath -> Decoder a -> Decoder a
 path pth d = foldr element d pth
 {-# INLINE path #-}
@@ -616,10 +616,10 @@ path pth d = foldr element d pth
 -- | Try a decoder and get back a 'Just a' if it succeeds and 'Nothing' if it fails.
 -- In other words, this decoder always succeeds with a 'Maybe a' value.
 --
--- > >>> decode (maybe string) "42"
--- > Just Nothing
--- > >>> decode (maybe int) "42"
--- > Just (Just 42)
+-- >>> decode (maybe string) "42"
+-- Just Nothing
+-- >>> decode (maybe int) "42"
+-- Just (Just 42)
 maybe :: Decoder a -> Decoder (Maybe a)
 maybe (Decoder d) =
   Decoder $ \val ->
@@ -631,10 +631,10 @@ maybe (Decoder d) =
 -- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
 -- In other words, this decoder always succeeds with an 'Either String a' value.
 --
--- > >>> decode (either string) "42"
--- > Just (Left "expected String, but encountered Number")
--- > >>> decode (either int) "42"
--- > Just (Right 42)
+-- >>> decode (either string) "42"
+-- Just (Left "expected String, but encountered Number")
+-- >>> decode (either int) "42"
+-- Just (Right 42)
 either :: Decoder a -> Decoder (Either String a)
 either (Decoder d) =
   Decoder $ \val ->
@@ -645,14 +645,14 @@ either (Decoder d) =
 
 -- | Try a number of decoders in order and return the first success.
 --
--- > >>> decode (oneOf [words <$> string, list string]) "\"Hello world!\""
--- > Just ["Hello", "world!"]
--- > >>> decode (oneOf [words <$> string, list string]) "[\"Hello world!\"]"
--- > Just ["Hello world!"]
--- > >>> decode (oneOf [Right <$> bool, return (Left "Not a boolean")]) "false"
--- > Just (Right False)
--- > >>> decode (oneOf [Right <$> bool, return (Left "Not a boolean")]) "42"
--- > Just (Left "Not a boolean")
+-- >>> decode (oneOf [ words <$> string, list string ]) "\"Hello world!\""
+-- Just ["Hello", "world!"]
+-- >>> decode (oneOf [ words <$> string, list string ]) "[\"Hello world!\"]"
+-- Just ["Hello world!"]
+-- >>> decode (oneOf [ Right <$> bool, return (Left "Not a boolean") ]) "false"
+-- Just (Right False)
+-- >>> decode (oneOf [ Right <$> bool, return (Left "Not a boolean") ]) "42"
+-- Just (Left "Not a boolean")
 oneOf :: NonEmpty (Decoder a) -> Decoder a
 oneOf (first :| rest) =
   foldr (<|>) first rest
