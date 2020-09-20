@@ -8,6 +8,7 @@ ghc:
 
 before_install:
   - cabal install doctest
+  - export PATH="$HOME/.cabal/bin:$PATH"
 
 before_script:
   - doctest lib/Data/Aeson/Combinators/Decode.hs
