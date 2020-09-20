@@ -1,2 +1,5 @@
 import Test.DocTest
-main = doctest [ "-isrc", "-XOverloadedStrings", "Data.Aeson.Combinators.Decode"]
+main = doctest [ "-isrc"
+               , "-XOverloadedStrings"
+               , "lib/Data/Aeson/Combinators/Decode.hs"
+               ]
