@@ -645,17 +645,18 @@ either (Decoder d) =
 
 -- | Try a number of decoders in order and return the first success.
 --
--- >>> decode (oneOf [ words <$> string, list string ]) "\"Hello world!\""
--- Just ["Hello", "world!"]
--- >>> decode (oneOf [ words <$> string, list string ]) "[\"Hello world!\"]"
+-- >>> import Data.List.NonEmpty
+-- >>> decode (oneOf $ (words <$> string) :| [ list string ]) "\"Hello world!\""
+-- Just ["Hello","world!"]
+-- >>> decode (oneOf $ (list string) :| [  words <$> string ] ) "[\"Hello world!\"]"
 -- Just ["Hello world!"]
--- >>> decode (oneOf [ Right <$> bool, return (Left "Not a boolean") ]) "false"
+-- >>> decode (oneOf $ (Right <$> bool) :| [ return (Left "Not a boolean") ]) "false"
 -- Just (Right False)
--- >>> decode (oneOf [ Right <$> bool, return (Left "Not a boolean") ]) "42"
+-- >>> decode (oneOf $ (Right <$> bool) :| [ return (Left "Not a boolean") ]) "42"
 -- Just (Left "Not a boolean")
 oneOf :: NonEmpty (Decoder a) -> Decoder a
 oneOf (first :| rest) =
-  foldr (<|>) first rest
+  foldl (<|>) first rest
 {-# INLINE oneOf #-}
 
 -- Decoding
