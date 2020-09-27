@@ -133,7 +133,7 @@ Or perhaps we want to encode 'Surronding' structure including 'Bool' as well:
 
 >>> :{
 pairEncoder :: Encoder Surrounding
-pairEncoder = contramap (\(S person bool) -> (run personEncoder person, bool)) auto
+pairEncoder = divide (\(S person bool) -> (person, bool)) personEncoder auto
 :}
 
 >>> encode pairEncoder (S (Person "Joe" 24) True)
