@@ -8,9 +8,31 @@
 --
 -- Maintainer  : marek.faj@gmail.com
 --
--- TODO: document
+-- Functions in this module serve as an alternative
+-- 'ToJSON' type class. This allows to define for mapping
+-- from data type into multiple JSON representations.
+-- type level wrapping.
 --
-module Data.Aeson.Combinators.Encode where
+-- There are two way of defining such encoder:
+--
+--     * Using simple function @a -> Value@ which doesn't require this library
+--     * Using this library as DSL together with 'Contravariant'
+--
+module Data.Aeson.Combinators.Encode (
+  -- * Example Usage
+  -- $usage
+
+    Encoder(..)
+  , auto
+  , field
+  , object
+  , field'
+  , object'
+  , vector
+  , list
+  , encode
+  , toEncoding
+) where
 
 import           Control.Applicative
 import           Data.Aeson                           (ToJSON, Value (..))
@@ -23,6 +45,36 @@ import           Data.Text                            (Text)
 import           Data.Vector                          (Vector, fromList)
 import qualified Data.Vector                          as Vector
 import           Data.Void                            (absurd)
+
+{- $usage
+This module as meant to be import as @qualified@
+
+> import Data.Aeson.Combinators.Encode as Encode
+
+__Decode type nested in json__
+>>> :set -XOverloadedStrings
+>>> :set -XDeriveGeneric
+
+some shit here
+
+>>> :{
+data Object = Object
+  { name :: String
+  , age  :: Int
+  } deriving (Show, Eq)
+:}
+
+>>> :{
+objectEncoder :: Encoder Object
+objectEncoder = object
+  [ field "name" auto name
+  , field "age" auto age
+  ]
+:}
+
+>>> encode objectEncoder $ Object "Jane" 42
+"{\"age\":42,\"name\":\"Jane\"}"
+-}
 
 
 newtype Encoder a = Encoder (a -> Value)
@@ -55,9 +107,6 @@ instance Decidable Encoder where
 
 
 -- Combinators
-
-
-newtype Id a = Id { runIdentity :: a }
 
 
 type KeyValueEncoder a = a -> (Text, Value)
