@@ -19,11 +19,18 @@
 --     * Using this library as DSL together with 'Contravariant'
 --
 module Data.Aeson.Combinators.Encode (
+  -- * Importing
+  -- $importing
+
+  -- * Alternative
+  -- $alternative
+
   -- * Example Usage
   -- $usage
 
     Encoder(..)
   , auto
+  , run
   , field
   , object
   , field'
@@ -46,12 +53,35 @@ import           Data.Vector                          (Vector, fromList)
 import qualified Data.Vector                          as Vector
 import           Data.Void                            (absurd)
 
-{- $usage
+{- $importing
 This module as meant to be import as @qualified@
 
 > import Data.Aeson.Combinators.Encode as Encode
+-}
 
-__Decode type nested in json__
+{- $alternative
+Be aware than in most cause you won't need to use this module.
+you can utilize Aeson's 'Value' type and it's instance of 'ToJSON' directly.
+
+>>> import qualified Data.Aeson as Aeson
+>>> import Data.Aeson ((.=))
+
+>>> data Object = Object { tag :: String, id :: Int }
+
+Define custom encoding function:
+
+>>> :{
+encodeObject :: Object -> Value
+encodeObject (Object tag id) =
+        Aeson.object ["tag" .= tag, "id" .= id]
+:}
+
+>>> Aeson.encode (encodeObject (Object "foo" 42))
+"{\"tag\":\"foo\",\"id\":42}"
+-}
+
+{- $usage
+
 >>> :set -XOverloadedStrings
 >>> :set -XDeriveGeneric
 
@@ -72,7 +102,7 @@ personEncoder = object
   ]
 :}
 
->>> encode personEncoder $ Person "Jane" 42
+>>> encode personEncoder (Person "Jane" 42)
 "{\"age\":42,\"name\":\"Jane\"}"
 
 Now we can use 'Contravariant' to manipulate our encoder.
@@ -86,17 +116,29 @@ But we still want to be able to encode it:
 
 >>> :{
 surroundingEncoder :: Encoder Surrounding
-surroundingEncoder = contramap (\(S o _) -> o) personEncoder
+surroundingEncoder = contramap (\(S person _) -> person) personEncoder
 :}
 
->>> encode surroundingEncoder $ S (Person "Joe" 24) False
+>>> encode surroundingEncoder (S (Person "Joe" 24) False)
 "{\"age\":24,\"name\":\"Joe\"}"
+
+Or perhaps we want to encode 'Surronding' structure including 'Bool' as well:
+
+>>> :{
+pairEncoder :: Encoder Surrounding
+pairEncoder = contramap (\(S person bool) -> (run personEncoder person, bool)) auto
+:}
+
+>>> encode pairEncoder (S (Person "Joe" 24) True)
+"[{\"age\":24,\"name\":\"Joe\"},true]"
 
 -}
 
 
 newtype Encoder a = Encoder (a -> Value)
 
+run :: Encoder a -> a -> Value
+run (Encoder f) a = f a
 
 auto :: ToJSON a => Encoder a
 auto = Encoder Aeson.toJSON
