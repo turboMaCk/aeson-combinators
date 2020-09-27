@@ -55,25 +55,43 @@ __Decode type nested in json__
 >>> :set -XOverloadedStrings
 >>> :set -XDeriveGeneric
 
-some shit here
+First lets define some type
 
 >>> :{
-data Object = Object
+data Person = Person
   { name :: String
   , age  :: Int
   } deriving (Show, Eq)
 :}
 
 >>> :{
-objectEncoder :: Encoder Object
-objectEncoder = object
+personEncoder :: Encoder Person
+personEncoder = object
   [ field "name" auto name
   , field "age" auto age
   ]
 :}
 
->>> encode objectEncoder $ Object "Jane" 42
+>>> encode personEncoder $ Person "Jane" 42
 "{\"age\":42,\"name\":\"Jane\"}"
+
+Now we can use 'Contravariant' to manipulate our encoder.
+
+Our type might be wrap in some rither type like this one:
+
+>>> import Data.Functor.Contravariant
+>>> data Surrounding = S Person Bool
+
+But we still want to be able to encode it:
+
+>>> :{
+surroundingEncoder :: Encoder Surrounding
+surroundingEncoder = contramap (\(S o _) -> o) personEncoder
+:}
+
+>>> encode surroundingEncoder $ S (Person "Joe" 24) False
+"{\"age\":24,\"name\":\"Joe\"}"
+
 -}
 
 
