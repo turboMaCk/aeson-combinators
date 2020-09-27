@@ -28,15 +28,22 @@ module Data.Aeson.Combinators.Encode (
   -- * Example Usage
   -- $usage
 
+  -- * Encoder
     Encoder(..)
   , auto
   , run
+  -- * Object Encoding
+  , KeyValueEncoder
   , field
   , object
+  -- * Alternative Object Encoding
+  , KeyValueEncoder'
   , field'
   , object'
+  -- * Collection Encoding
   , vector
   , list
+  -- * Evaluating Encoders
   , encode
   , toEncoding
 ) where
@@ -180,14 +187,14 @@ object :: [KeyValueEncoder a] -> Encoder a
 object xs = Encoder $ \val -> Aeson.object $ fmap (\f -> f val) xs
 
 
-type KeyValuesEncoder' a = a -> [(Text, Value)]
+type KeyValueEncoder' a = a -> [(Text, Value)]
 
 
 field' :: Text -> Encoder a -> a -> (Text, Value)
 field' name (Encoder enc) val = (name, enc val)
 
 
-object' :: KeyValuesEncoder' a -> Encoder a
+object' :: KeyValueEncoder' a -> Encoder a
 object' f = Encoder $ \val -> Aeson.object $ f val
 
 
