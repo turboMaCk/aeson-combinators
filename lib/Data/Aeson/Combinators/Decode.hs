@@ -130,6 +130,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- As mentioned above, combinators and type classes can be used together.
 --
 -- __Decode type nested in json__
+--
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XDeriveGeneric
 --
