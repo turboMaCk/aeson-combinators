@@ -323,7 +323,7 @@ myFlatEncoder2 = array
 >>> encode myFlatEncoder2 $ DividableRec "flat" 42 [1..3]
 "[\"flat\",42,[1,2,3]]"
 
-or even more DSL 'item' function which is infact just @flip contramap@
+or even more DSL like together with 'item' function which is infact just @flip contramap@
 
 >>> :{
 myFlatEncoder3 :: Encoder DividableRec
@@ -358,12 +358,12 @@ ended :: Game -> Bool
 ended xs = length xs >= 5
 :}
 
-We can define encoder for game running game:
+We can define encoder for running game:
 
 >>> :{
 runningEncoder :: Encoder Game
 runningEncoder = object
-   [ field "ended" bool (const False)
+   [ field "ended" bool ended
    , field "number-of-guesses" int length ]
 :}
 
@@ -372,7 +372,7 @@ And another encoder for finished game:
 >>> :{
 finishedEncoder :: Encoder Game
 finishedEncoder = object
-   [ field "ended" bool (const True)
+   [ field "ended" bool ended
    , field "guesses" (list string) id ]
 :}
 
@@ -395,10 +395,11 @@ While for ended game we get:
 >>> encode gameEncoder $ ["foo bar", "baz", "foo", "bar", "5th"]
 "{\"ended\":true,\"guesses\":[\"foo bar\",\"baz\",\"foo\",\"bar\",\"5th\"]}"
 
-But we can still use individual encoders as well bypassing the check for Game moderator:
+But we can still use individual encoders as well.
+Say for the moderator of the we always want to use @finishedEncoder@ which we can:
 
 >>> encode finishedEncoder $ ["foo bar", "baz"]
-"{\"ended\":true,\"guesses\":[\"foo bar\",\"baz\"]}"
+"{\"ended\":false,\"guesses\":[\"foo bar\",\"baz\"]}"
 
 -}
 newtype Encoder a = Encoder (a -> Value)
