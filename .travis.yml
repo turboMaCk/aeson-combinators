@@ -1,7 +1,38 @@
+sudo: true
 language: haskell
-ghc:
-  - "7.10"
-  - "7.8"
-  - "7.6"
-  - "8.4.4"
-  - "8.6"
+
+# ghc:
+
+cache:
+  directories:
+    - "$HOME/.cabal/store"
+    - "$HOME/.stack"
+    - "TRAVIS_BUILD_DIR/.stack-work"
+
+matrix:
+  include:
+  - ghc: "7.10"
+  - ghc: "7.8"
+  - ghc: "7.6"
+  - ghc: "8.4.4"
+  - ghc: "8.6"
+
+  # stack
+  # - ghc: 8.4.4
+  # - ghc: 8.6.5
+  # - ghc: 8.8.3
+
+install:
+  - |
+    ghc --version
+    cabal --version
+    cabal update
+    cabal build --enable-tests
+
+
+script:
+  - |
+    cabal test --enable-tests
+
+notifications:
+  email: false
