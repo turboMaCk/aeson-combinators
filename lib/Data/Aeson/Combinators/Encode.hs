@@ -236,7 +236,7 @@ instance Divisible Encoder where
 
   divide toPair (Encoder encA) (Encoder encB) = Encoder $ \val ->
     case toPair val of
-      (a, b) -> Array $ Vector.fromList [ encA a, encB b ]
+      (a, b) -> Array $ Vector.snoc (Vector.singleton $ encA a) $ encB b
 
 
 instance Decidable Encoder where
@@ -252,11 +252,13 @@ instance Decidable Encoder where
 -- | Run 'Encoder' given a value. this is essentially just a function application.
 run :: Encoder a -> a -> Value
 run (Encoder f) a = f a
+{-# INLINE run #-}
 
 
 -- | "Grab" 'Encoder' from 'ToJSON' definition.
 auto :: ToJSON a => Encoder a
 auto = Encoder Aeson.toJSON
+{-# INLINE auto #-}
 
 
 flatDivide :: (a -> (b, c)) -> Encoder b -> Encoder c -> Encoder a
@@ -306,16 +308,19 @@ encode encoder = E.encodingToLazyByteString . (toEncoding encoder)
 
 toEncoding :: Encoder a -> a -> E.Encoding
 toEncoding (Encoder enc) = E.value . enc
+{-# INLINE toEncoding #-}
 
 
 flatten :: Encoder a -> Encoder a
 flatten (Encoder f) = Encoder $ flattenArray . f
+{-# INLINE flatten #-}
 
 
 flattenArray :: Value -> Value
 flattenArray = \case
   Array vec -> flattenVec vec
   otherwise -> otherwise
+{-# INLINE flattenArray #-}
 
 
 flattenVec :: Vector Value -> Value
@@ -336,13 +341,15 @@ flattenVec vector =
 
 flattenOnce :: Encoder a -> Encoder a
 flattenOnce (Encoder f) = Encoder $ flattenValueOnce . f
+{-# INLINE flattenOnce #-}
 
 
 flattenValueOnce :: Value -> Value
 flattenValueOnce =
   \case
     Array vec -> case Vector.toList vec of
-                   [val1, Array nested ] ->
+                   [val1, Array nested] ->
                      Array $ Vector.cons val1 nested
                    _ -> Array vec
     otherwise -> otherwise
+{-# INLINE flattenValueOnce #-}
