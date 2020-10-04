@@ -165,8 +165,8 @@ And first encoder for this type:
 >>> :{
 personEncoder :: Encoder Person
 personEncoder = object
-  [ field "name" auto name
-  , field "age" auto age
+  [ field "name" string name
+  , field "age" int age
   ]
 :}
 
@@ -196,7 +196,7 @@ Or perhaps we want to encode 'Surronding' structure including 'Bool' as well:
 
 >>> :{
 pairEncoder :: Encoder Surrounding
-pairEncoder = divide (\(S person bool) -> (person, bool)) personEncoder auto
+pairEncoder = divide (\(S person bool) -> (person, bool)) personEncoder bool
 :}
 
 >>> encode pairEncoder (S (Person "Joe" 24) True)
@@ -224,8 +224,8 @@ data Person = Person
 >>> :{
 personEncoder :: Encoder Person
 personEncoder = object
-  [ field "name" auto name
-  , field "age" auto age
+  [ field "name" string name
+  , field "age" int age
   ]
 :}
 
@@ -258,8 +258,8 @@ We can use 'divide' to define 'Encoder'
 
 >>> :{
 myRecEncoder :: Encoder MyRec
-myRecEncoder = divide (\r -> (recTitle r, r)) auto $
-    divide (\r -> (recStart r, recEnd r)) auto auto
+myRecEncoder = divide (\r -> (recTitle r, r)) string $
+    divide (\r -> (recStart r, recEnd r)) int int
 :}
 
 Which produces nested JSON array
@@ -300,8 +300,8 @@ And 'Encoder' defined as:
 
 >>> :{
 myFlatEncoder :: Encoder DividableRec
-myFlatEncoder = flatDivide (\r -> (dTitle r, r)) auto $
-    divide (\r -> (dOrder r, dNumbers r)) auto auto
+myFlatEncoder = flatDivide (\r -> (dTitle r, r)) string $
+    divide (\r -> (dOrder r, dNumbers r)) int (list int)
 :}
 
 >>> encode myFlatEncoder $ DividableRec "flat" 42 [1..3]
@@ -314,9 +314,9 @@ for doing exactly the same thing once can accomplish using 'divide'
 >>> :{
 myFlatEncoder2 :: Encoder DividableRec
 myFlatEncoder2 = array
-    [ contramap dTitle auto
-    , contramap dOrder auto
-    , contramap dNumbers auto
+    [ contramap dTitle string
+    , contramap dOrder int
+    , contramap dNumbers (list int)
     ]
 :}
 
@@ -328,9 +328,9 @@ or even more DSL 'item' function which is infact just @flip contramap@
 >>> :{
 myFlatEncoder3 :: Encoder DividableRec
 myFlatEncoder3 = array
-    [ item auto dTitle
-    , item auto dOrder
-    , item auto dNumbers
+    [ item string dTitle
+    , item int dOrder
+    , item (list int) dNumbers
     ]
 :}
 
@@ -363,8 +363,8 @@ We can define encoder for game running game:
 >>> :{
 runningEncoder :: Encoder Game
 runningEncoder = object
-   [ field "ended" auto (const False)
-   , field "number-of-guesses" auto length ]
+   [ field "ended" bool (const False)
+   , field "number-of-guesses" int length ]
 :}
 
 And another encoder for finished game:
@@ -372,8 +372,8 @@ And another encoder for finished game:
 >>> :{
 finishedEncoder :: Encoder Game
 finishedEncoder = object
-   [ field "ended" auto (const True)
-   , field "guesses" auto id ]
+   [ field "ended" bool (const True)
+   , field "guesses" (list string) id ]
 :}
 
 Now we can use 'Decidable' instance to define logic for picking correct 'Encoder'.
