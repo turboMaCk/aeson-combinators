@@ -26,30 +26,6 @@ module Data.Aeson.Combinators.Decode (
   -- $applicative
     Decoder(..)
   , auto
--- * Decoding Primitive Values
---
--- *** Void, Unit, Bool
-  , void
-  , unit, bool
--- *** Integers (and Natural)
-  , int, integer, int8, int16, int32, int64
-  , word, word8, word16, word32, word64
-#if (MIN_VERSION_base(4,8,0))
-  , natural
-#endif
--- *** Floating Points
-  , float, double
-  , scientific
--- *** Strings
-  , char, text, string
-  , uuid, version
--- * Decoding Time
-  , zonedTime, localTime, timeOfDay
-  , utcTime
-  , day
-#if (MIN_VERSION_time_compat(1,9,2))
-  , dayOfWeek
-#endif
 -- * Decoding Containers
 -- *** Maybe
   , nullable
@@ -75,6 +51,30 @@ module Data.Aeson.Combinators.Decode (
   , maybe
   , either
   , oneOf
+-- * Decoding Primitive Values
+--
+-- *** Void, Unit, Bool
+  , void
+  , unit, bool
+-- *** Integers (and Natural)
+  , int, integer, int8, int16, int32, int64
+  , word, word8, word16, word32, word64
+#if (MIN_VERSION_base(4,8,0))
+  , natural
+#endif
+-- *** Floating Points
+  , float, double
+  , scientific
+-- *** Strings
+  , char, text, string
+  , uuid, version
+-- * Decoding Time
+  , zonedTime, localTime, timeOfDay
+  , utcTime
+  , day
+#if (MIN_VERSION_time_compat(1,9,2))
+  , dayOfWeek
+#endif
 -- * Running Decoders
 -- $running
 -- *** Decoding From Byte Strings
@@ -87,20 +87,28 @@ module Data.Aeson.Combinators.Decode (
   , eitherDecodeFileStrict, eitherDecodeFileStrict'
   ) where
 
+import           Prelude                    hiding (either, fail, maybe)
+import qualified Prelude                    (either)
+
 import           Control.Applicative
 import           Control.Monad              hiding (void)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
+
 import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
 import           Data.Aeson.Types
+
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
-import           Data.Int                   (Int16, Int32, Int64, Int8)
-import           Data.List.NonEmpty         (NonEmpty(..))
+import           Data.List.NonEmpty         (NonEmpty (..))
 import           Data.Text                  (Text)
+import qualified Data.Vector                as Vector
+
+-- Data imports
+import           Data.Int                   (Int16, Int32, Int64, Int8)
 import           Data.Time.Calendar         (Day)
 #if (MIN_VERSION_time_compat(1,9,2))
 import           Data.Time.Calendar.Compat  (DayOfWeek)
@@ -109,7 +117,6 @@ import           Data.Time.Clock            (UTCTime)
 import           Data.Time.LocalTime        (LocalTime, TimeOfDay, ZonedTime)
 import           Data.UUID.Types            (UUID)
 import           Data.Vector                (Vector, (!?))
-import qualified Data.Vector                as Vector
 import           Data.Version               (Version)
 import           Data.Void                  (Void)
 import           Data.Word                  (Word, Word16, Word32, Word64,
@@ -123,8 +130,7 @@ import qualified Data.Map.Lazy              as ML
 import qualified Data.Map.Strict            as MS
 import           Data.Scientific            (Scientific)
 import           Data.Traversable           (traverse)
-import qualified Prelude                    (either)
-import           Prelude                    hiding (fail, maybe, either)
+
 
 -- $usage
 -- As mentioned above, combinators and type classes can be used together.
@@ -196,8 +202,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > Just (Person {name = "Joe", age = 12})
 
 
--- | === JSON Decoder
---
+-- |
 -- A value describing how other values are decoded from JSON.
 -- This type is an alternative to Aeson's 'FromJSON' instance implementation.
 --
@@ -210,8 +215,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- 'eitherDecodeFileStrict', 'eitherDecodeFileStrict''
 -- also provided by this module.
 --
--- ==== Using Instances of Decoder
--- __Functor to map function over 'Decoder'__
+-- === Functor to map function over 'Decoder'
 --
 -- > intToString :: Decoder String
 -- > intToString = show <$> Decode.int
@@ -219,7 +223,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > >>> decode intToString "2"
 -- > Just "2"
 --
--- __Applicative to construct products__
+-- === Applicative to construct products
 --
 -- > stringIntPair :: Decoder (String, Int)
 -- > stringIntPair = (,) <$> index 0 string
@@ -228,7 +232,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > >>> decode stringIntPair "[\"hello\", 42]"
 -- > Just ("hello", 42)
 --
--- __Alternative to construct sums__
+-- === Alternative to construct sums
 --
 -- > eitherTextOrInt :: Decoder (Either Text Int)
 -- > eitherTextOrInt = Left  <$> Decode.text
@@ -239,7 +243,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > >>> decode eitherTextOrInt "42"
 -- > Just (Right 42)
 --
--- __Monad for 'Decoder' chaining__
+-- === Monad for 'Decoder' chaining
 --
 -- > odd :: Decoder Int
 -- > odd = do
@@ -289,7 +293,6 @@ instance MonadFail Decoder where
   fail s = Decoder $ \_ -> Fail.fail s
   {-# INLINE fail #-}
 
--- Basic Decoders
 
 -- | 'Decoder' is compatible with Aeson's 'FromJSON' class.
 -- 'auto' decoder acts like a proxy to instance implementation.
@@ -302,6 +305,212 @@ auto :: FromJSON a => Decoder a
 auto = Decoder parseJSON
 {-# INLINE auto #-}
 
+
+-- Continer Decoders
+
+-- | Decode JSON null and other JSON value to 'Data.Maybe'.
+-- JSON null will be decoded to 'Nothing'.
+-- Other value decoded by provided 'Decoder' to 'Just'
+nullable :: Decoder a -> Decoder (Maybe a)
+nullable (Decoder d) = Decoder $ \case
+  Null  -> pure Nothing
+  other -> Just <$> d other
+{-# INLINE nullable #-}
+
+
+-- | Decode JSON array of values to '[a]' of values
+-- using provided 'Decoder'.
+list :: Decoder a -> Decoder [a]
+list (Decoder d) = Decoder $
+  listParser d
+{-# INLINE list #-}
+
+
+-- | Decode JSON array of values to 'Vector' of values
+-- using provided 'Decoder'.
+vector :: Decoder a -> Decoder (Vector a)
+vector (Decoder d) = Decoder $ \case
+  Array v -> Vector.mapM d v
+  other   -> typeMismatch "Array" other
+{-# INLINE vector #-}
+
+
+-- | Decode JSON object to 'HL.HashMap' with 'Data.Text' key
+-- using provided 'Decoder'.
+hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
+hashMapLazy (Decoder d) = Decoder $ \case
+  Object xs -> traverse d xs
+  val -> typeMismatch "Array" val
+{-|# INLINE hashMapLazy #-}
+
+
+-- | Decode JSON object to 'HS.HashMap' with 'Data.Text' key
+-- using provided 'Decoder'.
+hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
+hashMapStrict (Decoder d) = Decoder $ \case
+  Object xs -> traverse d xs
+  val -> typeMismatch "Array" val
+{-|# INLINE hashMapStrict #-}
+
+
+-- | Decode JSON object to 'ML.Map' with 'Data.Text' key
+-- using provided 'Decoder'.
+mapLazy :: Decoder a -> Decoder (ML.Map Text a)
+mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
+{-|# INLINE mapStrict #-}
+
+
+-- | Decode JSON object to 'MS.Map' with 'Data.Text' key
+-- using provided 'Decoder'.
+mapStrict :: Decoder a -> Decoder (MS.Map Text a)
+mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
+{-|# INLINE mapStrict #-}
+
+
+-- Combinators
+
+-- | Decode JSON null to any value.
+-- This function is useful for decoding
+-- constructors which represented by null in JSON.
+--
+-- > data Codomain = NotSet | Foo | Bar
+-- >
+-- > myDomainDecoder :: Decoder Codomain
+-- > myDomainDecoder = jsonNull NotSet
+-- >               <|> (text >>= fooBar)
+-- >    where fooBar "foo"   = return Foo
+-- >          fooBar "bar"   = return Bar
+-- >          fooBar unknown = fail $ "Unknown value " <> show unknown
+jsonNull :: a -> Decoder a
+jsonNull a = Decoder $ \case
+  Null -> pure a
+  val    -> typeMismatch "null" val
+{-# INLINE jsonNull #-}
+
+
+-- | Extract JSON value from JSON object key
+--
+-- >>> decode (key "data" int) "{\"data\": 42}"
+-- Just 42
+key :: Text -> Decoder a -> Decoder a
+key t (Decoder d) = Decoder $ \case
+  Object v -> d =<< v .: t
+  val        -> typeMismatch "Object" val
+{-# INLINE key #-}
+
+
+-- | Extract JSON value from JSON object keys
+--
+-- >>> decode (at ["data", "value"] int) "{\"data\": {\"value\": 42}}"
+-- Just 42
+at :: [Text] -> Decoder a -> Decoder a
+at pth d = foldr key d pth
+{-# INLINE at #-}
+
+
+-- | Extract JSON value from JSON array index
+--
+-- >>> decode (index 2 int) "[0,1,2,3,4]"
+-- Just 2
+index :: Int -> Decoder a -> Decoder a
+index i (Decoder d) = Decoder $ \val ->
+  case val of
+    Array vec -> case vec !? i of
+                    Just v  -> d v
+                    Nothing -> unexpected val
+    _         -> typeMismatch "Array" val
+{-# INLINE index #-}
+
+
+-- | Extract JSON value from JSON array indexes
+--
+-- > >>> decode (indexes [0,1,0] int) "[[true, [42]]]"
+-- > Just 42
+indexes :: [Int] -> Decoder a -> Decoder a
+indexes pth d = foldr index d pth
+{-# INLINE indexes #-}
+
+
+-- $jsonpath
+-- Combinators using Aeson's 'JSONPathElement' and 'JSONPath' types.
+-- This makes it possible to combine object keys and array index accessors.
+
+-- | Decode value from JSON structure.
+--
+-- From object key:
+--
+-- >>> decode (element (Key "data") text) "{\"data\": \"foo\"}"
+-- Just "foo"
+--
+-- From array index:
+--
+-- >>> decode (element (Index 1) int) "[0,1,2]"
+-- Just 1
+element :: JSONPathElement -> Decoder a -> Decoder a
+element (Key txt) = key txt
+element (Index i) = index i
+{-# INLINE element #-}
+
+
+-- | Decode value from deep JSON structure.
+--
+-- >>> decode (path [Key "data", Index 0] bool) "{\"data\":[true, false, false]}"
+-- Just True
+path :: JSONPath -> Decoder a -> Decoder a
+path pth d = foldr element d pth
+{-# INLINE path #-}
+
+
+-- | Try a decoder and get back a 'Just a' if it succeeds and 'Nothing' if it fails.
+-- In other words, this decoder always succeeds with a 'Maybe a' value.
+--
+-- >>> decode (maybe string) "42"
+-- Just Nothing
+-- >>> decode (maybe int) "42"
+-- Just (Just 42)
+maybe :: Decoder a -> Decoder (Maybe a)
+maybe (Decoder d) =
+  Decoder $ \val ->
+    case parse d val of
+      Success x -> pure (Just x)
+      Error _   -> pure Nothing
+{-# INLINE maybe #-}
+
+
+-- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
+-- In other words, this decoder always succeeds with an 'Either String a' value.
+--
+-- >>> decode (either string) "42"
+-- Just (Left "expected String, but encountered Number")
+-- >>> decode (either int) "42"
+-- Just (Right 42)
+either :: Decoder a -> Decoder (Either String a)
+either (Decoder d) =
+  Decoder $ \val ->
+    case parse d val of
+      Success x -> pure (Right x)
+      Error err -> pure (Left err)
+{-# INLINE either #-}
+
+
+-- | Try a number of decoders in order and return the first success.
+--
+-- >>> import Data.List.NonEmpty
+-- >>> decode (oneOf $ (words <$> string) :| [ list string ]) "\"Hello world!\""
+-- Just ["Hello","world!"]
+-- >>> decode (oneOf $ (list string) :| [  words <$> string ] ) "[\"Hello world!\"]"
+-- Just ["Hello world!"]
+-- >>> decode (oneOf $ (Right <$> bool) :| [ return (Left "Not a boolean") ]) "false"
+-- Just (Right False)
+-- >>> decode (oneOf $ (Right <$> bool) :| [ return (Left "Not a boolean") ]) "42"
+-- Just (Left "Not a boolean")
+oneOf :: NonEmpty (Decoder a) -> Decoder a
+oneOf (first :| rest) =
+  foldl (<|>) first rest
+{-# INLINE oneOf #-}
+
+
+-- Basic Decoders
 
 -- | Decode any JSON value to 'Void' value
 -- which is impossible to construct.
@@ -499,209 +708,6 @@ dayOfWeek = auto
 {-# INLINE dayOfWeek #-}
 #endif
 
-
--- Continer Decoders
-
--- | Decode JSON null and other JSON value to 'Data.Maybe'.
--- JSON null will be decoded to 'Nothing'.
--- Other value decoded by provided 'Decoder' to 'Just'
-nullable :: Decoder a -> Decoder (Maybe a)
-nullable (Decoder d) = Decoder $ \case
-  Null  -> pure Nothing
-  other -> Just <$> d other
-{-# INLINE nullable #-}
-
-
--- | Decode JSON array of values to '[a]' of values
--- using provided 'Decoder'.
-list :: Decoder a -> Decoder [a]
-list (Decoder d) = Decoder $
-  listParser d
-{-# INLINE list #-}
-
-
--- | Decode JSON array of values to 'Vector' of values
--- using provided 'Decoder'.
-vector :: Decoder a -> Decoder (Vector a)
-vector (Decoder d) = Decoder $ \case
-  Array v -> Vector.mapM d v
-  other   -> typeMismatch "Array" other
-{-# INLINE vector #-}
-
-
--- | Decode JSON object to 'HL.HashMap' with 'Data.Text' key
--- using provided 'Decoder'.
-hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
-hashMapLazy (Decoder d) = Decoder $ \case
-  Object xs -> traverse d xs
-  val -> typeMismatch "Array" val
-{-|# INLINE hashMapLazy #-}
-
-
--- | Decode JSON object to 'HS.HashMap' with 'Data.Text' key
--- using provided 'Decoder'.
-hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
-hashMapStrict (Decoder d) = Decoder $ \case
-  Object xs -> traverse d xs
-  val -> typeMismatch "Array" val
-{-|# INLINE hashMapStrict #-}
-
-
--- | Decode JSON object to 'ML.Map' with 'Data.Text' key
--- using provided 'Decoder'.
-mapLazy :: Decoder a -> Decoder (ML.Map Text a)
-mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
-{-|# INLINE mapStrict #-}
-
-
--- | Decode JSON object to 'MS.Map' with 'Data.Text' key
--- using provided 'Decoder'.
-mapStrict :: Decoder a -> Decoder (MS.Map Text a)
-mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
-{-|# INLINE mapStrict #-}
-
-
--- Combinators
-
--- | Decode JSON null to any value.
--- This function is useful for decoding
--- constructors which represented by null in JSON.
---
--- > data Codomain = NotSet | Foo | Bar
--- >
--- > myDomainDecoder :: Decoder Codomain
--- > myDomainDecoder = jsonNull NotSet
--- >               <|> (text >>= fooBar)
--- >    where fooBar "foo"   = return Foo
--- >          fooBar "bar"   = return Bar
--- >          fooBar unknown = fail $ "Unknown value " <> show unknown
-jsonNull :: a -> Decoder a
-jsonNull a = Decoder $ \case
-  Null -> pure a
-  val    -> typeMismatch "null" val
-{-# INLINE jsonNull #-}
-
-
--- | Extract JSON value from JSON object key
---
--- >>> decode (key "data" int) "{\"data\": 42}"
--- Just 42
-key :: Text -> Decoder a -> Decoder a
-key t (Decoder d) = Decoder $ \case
-  Object v -> d =<< v .: t
-  val        -> typeMismatch "Object" val
-{-# INLINE key #-}
-
-
--- | Extract JSON value from JSON object keys
---
--- >>> decode (at ["data", "value"] int) "{\"data\": {\"value\": 42}}"
--- Just 42
-at :: [Text] -> Decoder a -> Decoder a
-at pth d = foldr key d pth
-{-# INLINE at #-}
-
-
--- | Extract JSON value from JSON array index
---
--- >>> decode (index 2 int) "[0,1,2,3,4]"
--- Just 2
-index :: Int -> Decoder a -> Decoder a
-index i (Decoder d) = Decoder $ \val ->
-  case val of
-    Array vec -> case vec !? i of
-                    Just v  -> d v
-                    Nothing -> unexpected val
-    _         -> typeMismatch "Array" val
-{-# INLINE index #-}
-
-
--- | Extract JSON value from JSON array indexes
---
--- > >>> decode (indexes [0,1,0] int) "[[true, [42]]]"
--- > Just 42
-indexes :: [Int] -> Decoder a -> Decoder a
-indexes pth d = foldr index d pth
-{-# INLINE indexes #-}
-
-
--- $jsonpath
--- Combinators using Aeson's 'JSONPathElement' and 'JSONPath' types.
--- This makes it possible to combine object keys and array index accessors.
-
--- | Decode value from JSON structure.
---
--- From object key:
---
--- >>> decode (element (Key "data") text) "{\"data\": \"foo\"}"
--- Just "foo"
---
--- From array index:
---
--- >>> decode (element (Index 1) int) "[0,1,2]"
--- Just 1
-element :: JSONPathElement -> Decoder a -> Decoder a
-element (Key txt) = key txt
-element (Index i) = index i
-{-# INLINE element #-}
-
-
--- | Decode value from deep JSON structure.
---
--- >>> decode (path [Key "data", Index 0] bool) "{\"data\":[true, false, false]}"
--- Just True
-path :: JSONPath -> Decoder a -> Decoder a
-path pth d = foldr element d pth
-{-# INLINE path #-}
-
-
--- | Try a decoder and get back a 'Just a' if it succeeds and 'Nothing' if it fails.
--- In other words, this decoder always succeeds with a 'Maybe a' value.
---
--- >>> decode (maybe string) "42"
--- Just Nothing
--- >>> decode (maybe int) "42"
--- Just (Just 42)
-maybe :: Decoder a -> Decoder (Maybe a)
-maybe (Decoder d) =
-  Decoder $ \val ->
-    case parse d val of
-      Success x -> pure (Just x)
-      Error _ -> pure Nothing
-{-# INLINE maybe #-}
-
-
--- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
--- In other words, this decoder always succeeds with an 'Either String a' value.
---
--- >>> decode (either string) "42"
--- Just (Left "expected String, but encountered Number")
--- >>> decode (either int) "42"
--- Just (Right 42)
-either :: Decoder a -> Decoder (Either String a)
-either (Decoder d) =
-  Decoder $ \val ->
-    case parse d val of
-      Success x -> pure (Right x)
-      Error err -> pure (Left err)
-{-# INLINE either #-}
-
-
--- | Try a number of decoders in order and return the first success.
---
--- >>> import Data.List.NonEmpty
--- >>> decode (oneOf $ (words <$> string) :| [ list string ]) "\"Hello world!\""
--- Just ["Hello","world!"]
--- >>> decode (oneOf $ (list string) :| [  words <$> string ] ) "[\"Hello world!\"]"
--- Just ["Hello world!"]
--- >>> decode (oneOf $ (Right <$> bool) :| [ return (Left "Not a boolean") ]) "false"
--- Just (Right False)
--- >>> decode (oneOf $ (Right <$> bool) :| [ return (Left "Not a boolean") ]) "42"
--- Just (Left "Not a boolean")
-oneOf :: NonEmpty (Decoder a) -> Decoder a
-oneOf (first :| rest) =
-  foldl (<|>) first rest
-{-# INLINE oneOf #-}
 
 
 -- Decoding
