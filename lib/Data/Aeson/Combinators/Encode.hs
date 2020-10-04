@@ -32,6 +32,8 @@ module Data.Aeson.Combinators.Encode (
     Encoder(..)
   , auto
   , run
+  , flatDivide
+  , flatten
   -- * Object Encoding
   , KeyValueEncoder
   , field
@@ -46,6 +48,9 @@ module Data.Aeson.Combinators.Encode (
   -- * Evaluating Encoders
   , encode
   , toEncoding
+
+  -- TODO: remove
+  , flattenArray
 ) where
 
 import           Control.Applicative
@@ -143,13 +148,84 @@ pairEncoder = divide (\(S person bool) -> (person, bool)) personEncoder auto
 -}
 
 
+{- | === JSON Encoder
+
+Value describing encoding of @a@ into a JSON 'Value'.
+This is essentially just a wrapper around function that
+should be applied later.
+
+==== Covariant to map function over input
+
+Extract 'Person' from any pair:
+> -- Using personEncoder definition from above
+> surroundingEncoder :: Encoder (Person, a)
+> surroundingEncoder = contramap fst personEncoder
+
+==== Divisible to merge encoders
+Divisble instance by merging value into JSON array pair by pair.
+
+Given this type definition:
+
+>>> :{
+data MyRec = MyRec
+  { recTitle :: String
+  , recStart :: Int
+  , recEnd   :: Int
+  } deriving (Show, Eq)
+:}
+
+We can use 'divide' to define 'Encoder'
+
+>>> :{
+myRecEncoder :: Encoder MyRec
+myRecEncoder = divide (\r -> (recTitle r, r)) auto $
+    divide (\r -> (recStart r, recEnd r)) auto auto
+:}
+
+Which produces nested JSON array
+
+>>> encode myRecEncoder $ MyRec "title" 0 9
+"[\"title\",[0,9]]"
+
+We can use 'flatten' combinator to avoid this nesting
+
+>>> encode (flatten myRecEncoder) $ MyRec "title" 0 9
+"[\"title\",0,9]"
+
+Flatten combinator is recursive.
+This means it will attempt to flatten everything it can:
+
+>>> :{
+listPairEncoder :: Encoder (String, [Int])
+listPairEncoder = flatten auto
+:}
+
+>>> encode listPairEncoder $ ("numbers", [0..3])
+"[\"numbers\",0,1,2,3]"
+
+In cases where you want to chain multiple divides in flat manner
+while avoiding recursive flattening use provided 'flatDivide' combinator.
+
+Given this record:
+>>> :{
+data DividableRec = DividableRec
+  { dTitle :: String
+  , dOrder    :: Int
+  , dNumbers  :: [Int]
+  } deriving (Show, Eq)
+:}
+
+And 'Encoder' defined as:
+>>> :{
+myFlatEncoder :: Encoder DividableRec
+myFlatEncoder = flatDivide (\r -> (dTitle r, r)) auto $
+    divide (\r -> (dOrder r, dNumbers r)) auto auto
+:}
+
+>>> encode myFlatEncoder $ DividableRec "flat" 42 [1..3]
+"[\"flat\",42,[1,2,3]]"
+-}
 newtype Encoder a = Encoder (a -> Value)
-
-run :: Encoder a -> a -> Value
-run (Encoder f) a = f a
-
-auto :: ToJSON a => Encoder a
-auto = Encoder Aeson.toJSON
 
 
 instance Contravariant Encoder where
@@ -173,6 +249,19 @@ instance Decidable Encoder where
             Left l  -> encL l
             Right r -> encR r
 
+
+-- | Run 'Encoder' given a value. this is essentially just a function application.
+run :: Encoder a -> a -> Value
+run (Encoder f) a = f a
+
+
+-- | "Grab" 'Encoder' from 'ToJSON' definition.
+auto :: ToJSON a => Encoder a
+auto = Encoder Aeson.toJSON
+
+
+flatDivide :: (a -> (b, c)) -> Encoder b -> Encoder c -> Encoder a
+flatDivide f b c = flattenOnce $ divide f b c
 
 -- Combinators
 
@@ -220,17 +309,41 @@ toEncoding :: Encoder a -> a -> E.Encoding
 toEncoding (Encoder enc) = E.value . enc
 
 
-flatten :: Vector Value -> Value
-flatten vector =
-  foldl doFlat (Array Vector.empty) vector
+flatten :: Encoder a -> Encoder a
+flatten (Encoder f) = Encoder $ flattenArray . f
+
+
+flattenArray :: Value -> Value
+flattenArray = \case
+  Array vec -> flattenVec vec
+  otherwise -> otherwise
+
+
+flattenVec :: Vector Value -> Value
+flattenVec vector =
+  foldr doFlat (Array Vector.empty) vector
   where
-    doFlat acc val =
+    doFlat val acc =
       case val of
         Array vec ->
           case acc of
-            Array acc' -> flatten $ acc' <> vec
+            Array acc' -> flattenVec $ vec <> acc'
             x          -> Array $ Vector.cons x vec
         _         ->
           case acc of
             Array acc' -> Array $ Vector.cons val acc'
             x          -> Array $ Vector.fromList [x, val]
+
+
+flattenOnce :: Encoder a -> Encoder a
+flattenOnce (Encoder f) = Encoder $ flattenValueOnce . f
+
+
+flattenValueOnce :: Value -> Value
+flattenValueOnce =
+  \case
+    Array vec -> case Vector.toList vec of
+                   [val1, Array nested ] ->
+                     Array $ Vector.cons val1 nested
+                   _ -> Array vec
+    otherwise -> otherwise

@@ -4,6 +4,7 @@
 module JSONEncodeSpec where
 
 import qualified Data.Aeson.Combinators.Encode as JE
+import           Data.Functor.Contravariant.Divisible (divide)
 import           Data.Text
 import           Test.Hspec
 
@@ -54,8 +55,29 @@ listSpec = describe "list encoding" $ do
     JE.encode (JE.list JE.auto) [True, False] `shouldBe` "[true,false]"
 
 
+data MyRec = MyRec
+  { recTitle :: String
+  , recStart :: Int
+  , recEnd   :: Int
+  } deriving (Show, Eq)
+
+
+divideSpec :: Spec
+divideSpec = describe "divide behaviour" $ do
+    it "encodes nested list" $ do
+      JE.encode myRecEncoder (MyRec "title" 0 9)
+        `shouldBe` "[\"title\",[0,9]]"
+
+    it "should flatten encoder" $ do
+      JE.encode (JE.flatten myRecEncoder) (MyRec "title" 0 9)
+        `shouldBe` "[\"title\",0,9]"
+  where
+    myRecEncoder = divide (\r -> (recTitle r, r)) JE.auto $
+        divide (\r -> (recStart r, recEnd r)) JE.auto JE.auto
+
 spec :: Spec
 spec = do
   encodePrimitives
   objectEncoding
   listSpec
+  divideSpec
