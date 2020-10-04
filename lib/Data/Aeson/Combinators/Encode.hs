@@ -22,7 +22,7 @@ module Data.Aeson.Combinators.Encode (
 -- * Importing
 -- $importing
 
--- * Alternative
+-- * Aleternative to using 'Encode' Combinators
 -- $alternative
 
 -- * Example Usage
@@ -309,7 +309,7 @@ myFlatEncoder = flatDivide (\r -> (dTitle r, r)) string $
 
 Since dividable is not the most ergonomic API,
 in most cases it might make more sense to use 'array' which provides much nicer DSL
-for doing exactly the same thing once can accomplish using 'divide'
+for doing exactly the same thing.
 
 >>> :{
 myFlatEncoder2 :: Encoder DividableRec
