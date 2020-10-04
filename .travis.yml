@@ -1,6 +1,9 @@
 sudo: true
 language: haskell
 
+git:
+  depth: 5
+
 cabal: "3.0"
 
 cache:
