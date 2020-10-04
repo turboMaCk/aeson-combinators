@@ -48,9 +48,6 @@ module Data.Aeson.Combinators.Encode (
   -- * Evaluating Encoders
   , encode
   , toEncoding
-
-  -- TODO: remove
-  , flattenArray
 ) where
 
 import           Control.Applicative
