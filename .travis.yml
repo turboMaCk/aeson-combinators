@@ -12,27 +12,27 @@ cache:
 matrix:
   include:
   - ghc: "7.10"
+    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack-7.10.yaml"
   - ghc: "7.8"
-  - ghc: "7.6"
+    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack-7.8.yaml"
   - ghc: "8.4.4"
+    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack-8.4.4.yaml"
   - ghc: "8.6"
-
-  # stack
-  # - ghc: 8.4.4
-  # - ghc: 8.6.5
-  # - ghc: 8.8.3
+    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack-7.8.yaml"
+  - ghc: "8.8.4"
+    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack-8.8.4.yaml"
 
 install:
   - |
-    ghc --version
-    cabal --version
-    cabal update
-    cabal build --enable-tests
+    curl -sSL https://get.haskellstack.org/ | sh
+    # build project with stack
+    stack --version
+    stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
 
 
 script:
   - |
-    cabal test --enable-tests
+    stack test --system-ghc
 
 notifications:
   email: false
