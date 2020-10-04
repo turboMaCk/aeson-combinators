@@ -45,6 +45,8 @@ module Data.Aeson.Combinators.Encode (
   -- * Collection Encoding
   , vector
   , list
+  , array
+  , item
   -- * Evaluating Encoders
   , encode
   , toEncoding
@@ -223,6 +225,37 @@ myFlatEncoder = flatDivide (\r -> (dTitle r, r)) auto $
 
 >>> encode myFlatEncoder $ DividableRec "flat" 42 [1..3]
 "[\"flat\",42,[1,2,3]]"
+
+Since dividable is not the most ergonomic API,
+in most cases it might make more sense to use 'array' which provides much nicer DSL
+for doing exactly the same thing once can accomplish using 'divide'
+
+>>> :{
+myFlatEncoder2 :: Encoder DividableRec
+myFlatEncoder2 = array
+    [ contramap dTitle auto
+    , contramap dOrder auto
+    , contramap dNumbers auto
+    ]
+:}
+
+>>> encode myFlatEncoder2 $ DividableRec "flat" 42 [1..3]
+"[\"flat\",42,[1,2,3]]"
+
+or even more DSL 'item' function which is infact just @flip contramap@
+
+>>> :{
+myFlatEncoder3 :: Encoder DividableRec
+myFlatEncoder3 = array
+    [ item auto dTitle
+    , item auto dOrder
+    , item auto dNumbers
+    ]
+:}
+
+>>> encode myFlatEncoder3 $ DividableRec "flat" 42 [1..3]
+"[\"flat\",42,[1,2,3]]"
+
 -}
 newtype Encoder a = Encoder (a -> Value)
 
@@ -230,6 +263,14 @@ newtype Encoder a = Encoder (a -> Value)
 instance Contravariant Encoder where
   contramap f (Encoder enc) = Encoder (enc . f)
 
+{-|
+-}
+
+array :: [Encoder a] -> Encoder a
+array xs = Encoder $ \a -> Array $ Vector.fromList $ (\(Encoder f) -> f a) <$> xs
+
+item :: Divisible m => m a -> (b -> a) -> m b
+item = flip contramap
 
 instance Divisible Encoder where
   conquer = Encoder (const Null)
