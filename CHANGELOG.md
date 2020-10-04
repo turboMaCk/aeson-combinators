@@ -1,5 +1,8 @@
 # Revision history for aeson-combinators
 
+## 0.0.2.1 -- 2020-20-09
+* Add README to extra source files
+
 ## 0.0.2.1 -- 2020-03-08
 * Add README to extra source files
 

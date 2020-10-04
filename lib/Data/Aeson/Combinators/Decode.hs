@@ -26,30 +26,6 @@ module Data.Aeson.Combinators.Decode (
   -- $applicative
     Decoder(..)
   , auto
--- * Decoding Primitive Values
---
--- *** Void, Unit, Bool
-  , void
-  , unit, bool
--- *** Integers (and Natural)
-  , int, integer, int8, int16, int32, int64
-  , word, word8, word16, word32, word64
-#if (MIN_VERSION_base(4,8,0))
-  , natural
-#endif
--- *** Floating Points
-  , float, double
-  , scientific
--- *** Strings
-  , char, text, string
-  , uuid, version
--- * Decoding Time
-  , zonedTime, localTime, timeOfDay
-  , utcTime
-  , day
-#if (MIN_VERSION_time_compat(1,9,2))
-  , dayOfWeek
-#endif
 -- * Decoding Containers
 -- *** Maybe
   , nullable
@@ -75,6 +51,30 @@ module Data.Aeson.Combinators.Decode (
   , maybe
   , either
   , oneOf
+-- * Decoding Primitive Values
+--
+-- *** Void, Unit, Bool
+  , void
+  , unit, bool
+-- *** Integers (and Natural)
+  , int, integer, int8, int16, int32, int64
+  , word, word8, word16, word32, word64
+#if (MIN_VERSION_base(4,8,0))
+  , natural
+#endif
+-- *** Floating Points
+  , float, double
+  , scientific
+-- *** Strings
+  , char, text, string
+  , uuid, version
+-- * Decoding Time
+  , zonedTime, localTime, timeOfDay
+  , utcTime
+  , day
+#if (MIN_VERSION_time_compat(1,9,2))
+  , dayOfWeek
+#endif
 -- * Running Decoders
 -- $running
 -- *** Decoding From Byte Strings
@@ -87,20 +87,28 @@ module Data.Aeson.Combinators.Decode (
   , eitherDecodeFileStrict, eitherDecodeFileStrict'
   ) where
 
+import           Prelude                    hiding (either, fail, maybe)
+import qualified Prelude                    (either)
+
 import           Control.Applicative
 import           Control.Monad              hiding (void)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
+
 import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
 import           Data.Aeson.Types
+
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
-import           Data.Int                   (Int16, Int32, Int64, Int8)
-import           Data.List.NonEmpty         (NonEmpty(..))
+import           Data.List.NonEmpty         (NonEmpty (..))
 import           Data.Text                  (Text)
+import qualified Data.Vector                as Vector
+
+-- Data imports
+import           Data.Int                   (Int16, Int32, Int64, Int8)
 import           Data.Time.Calendar         (Day)
 #if (MIN_VERSION_time_compat(1,9,2))
 import           Data.Time.Calendar.Compat  (DayOfWeek)
@@ -109,7 +117,6 @@ import           Data.Time.Clock            (UTCTime)
 import           Data.Time.LocalTime        (LocalTime, TimeOfDay, ZonedTime)
 import           Data.UUID.Types            (UUID)
 import           Data.Vector                (Vector, (!?))
-import qualified Data.Vector                as Vector
 import           Data.Version               (Version)
 import           Data.Void                  (Void)
 import           Data.Word                  (Word, Word16, Word32, Word64,
@@ -123,13 +130,13 @@ import qualified Data.Map.Lazy              as ML
 import qualified Data.Map.Strict            as MS
 import           Data.Scientific            (Scientific)
 import           Data.Traversable           (traverse)
-import qualified Prelude                    (either)
-import           Prelude                    hiding (fail, maybe, either)
+
 
 -- $usage
 -- As mentioned above, combinators and type classes can be used together.
 --
 -- __Decode type nested in json__
+--
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XDeriveGeneric
 --
@@ -195,8 +202,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > Just (Person {name = "Joe", age = 12})
 
 
--- | === JSON Decoder
---
+-- |
 -- A value describing how other values are decoded from JSON.
 -- This type is an alternative to Aeson's 'FromJSON' instance implementation.
 --
@@ -209,8 +215,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- 'eitherDecodeFileStrict', 'eitherDecodeFileStrict''
 -- also provided by this module.
 --
--- ==== Using Instances of Decoder
--- __Functor to map function over 'Decoder'__
+-- === Functor to map function over 'Decoder'
 --
 -- > intToString :: Decoder String
 -- > intToString = show <$> Decode.int
@@ -218,7 +223,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > >>> decode intToString "2"
 -- > Just "2"
 --
--- __Applicative to construct products__
+-- === Applicative to construct products
 --
 -- > stringIntPair :: Decoder (String, Int)
 -- > stringIntPair = (,) <$> index 0 string
@@ -227,7 +232,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > >>> decode stringIntPair "[\"hello\", 42]"
 -- > Just ("hello", 42)
 --
--- __Alternative to construct sums__
+-- === Alternative to construct sums
 --
 -- > eitherTextOrInt :: Decoder (Either Text Int)
 -- > eitherTextOrInt = Left  <$> Decode.text
@@ -238,7 +243,7 @@ import           Prelude                    hiding (fail, maybe, either)
 -- > >>> decode eitherTextOrInt "42"
 -- > Just (Right 42)
 --
--- __Monad for 'Decoder' chaining__
+-- === Monad for 'Decoder' chaining
 --
 -- > odd :: Decoder Int
 -- > odd = do
@@ -288,7 +293,6 @@ instance MonadFail Decoder where
   fail s = Decoder $ \_ -> Fail.fail s
   {-# INLINE fail #-}
 
--- Basic Decoders
 
 -- | 'Decoder' is compatible with Aeson's 'FromJSON' class.
 -- 'auto' decoder acts like a proxy to instance implementation.
@@ -300,175 +304,6 @@ instance MonadFail Decoder where
 auto :: FromJSON a => Decoder a
 auto = Decoder parseJSON
 {-# INLINE auto #-}
-
--- | Decode any JSON value to 'Void' value
--- which is impossible to construct.
---
--- __This Decoder is guarenteed to fail.__
-void :: Decoder Void
-void = auto
-{-# INLINE void #-}
-
--- | Decode JSON null into '()'
-unit :: Decoder ()
-unit = auto
-{-# INLINE unit #-}
-
--- | Decode JSON booleans to Haskell 'Data.Bool'
-bool :: Decoder Bool
-bool = auto
-{-# INLINE bool #-}
-
--- | Decode JSON number to 'Data.Int.Int'
-int :: Decoder Int
-int = auto
-{-# INLINE int #-}
-
--- | Decode JSON number to 'Data.Int.Int8'
-int8 :: Decoder Int8
-int8 = auto
-{-# INLINE int8 #-}
-
--- | Decode JSON number to 'Data.Int.Int16'
-int16 :: Decoder Int16
-int16 = auto
-{-# INLINE int16 #-}
-
--- | Decode JSON number to 'Data.Int.Int32'
-int32 :: Decoder Int32
-int32 = auto
-{-# INLINE int32 #-}
-
--- | Decode JSON number to 'Data.Int.Int64'
-int64 :: Decoder Int64
-int64 = auto
-{-# INLINE int64 #-}
-
--- | Decode JSON number to unbounded 'Integer'
-integer :: Decoder Integer
-integer = auto
-{-# INLINE integer #-}
-
-#if (MIN_VERSION_base(4,8,0))
--- | Decode JSON number to GHC's 'GHC.Natural' (non negative)
---
--- This function requires 'base' >= 4.8.0
-natural :: Decoder Natural
-natural = auto
-{-# INLINE natural #-}
-#endif
-
--- | Decode JSON number to bounded 'Data.Word.Word'
-word :: Decoder Word
-word = auto
-{-# INLINE word #-}
-
--- | Decode JSON number to bounded 'Data.Word.Word8'
-word8 :: Decoder Word8
-word8 = auto
-{-# INLINE word8 #-}
-
--- | Decode JSON number to bounded 'Data.Word.Word16'
-word16 :: Decoder Word16
-word16 = auto
-{-# INLINE word16 #-}
-
--- | Decode JSON number to bounded 'Data.Word.Word32'
-word32 :: Decoder Word32
-word32 = auto
-{-# INLINE word32 #-}
-
--- | Decode JSON number to bounded 'Data.Word.Word64'
-word64 :: Decoder Word64
-word64 = auto
-{-# INLINE word64 #-}
-
-
--- | Decode JSON number to 'Float'
-float :: Decoder Float
-float = auto
-{-# INLINE float #-}
-
--- | Decode JSON number to 'Double'
-double :: Decoder Double
-double = auto
-{-# INLINE double #-}
-
--- | Decode JSON number to arbitrary precision 'Scientific'
-scientific :: Decoder Scientific
-scientific = auto
-{-# INLINE scientific #-}
-
--- | Decode single character JSON string to 'Data.Char'
-char :: Decoder Char
-char = auto
-{-# INLINE char #-}
-
--- | Decode JSON string to 'Data.String'
-string :: Decoder String
-string = auto
-{-# INLINE string #-}
-
--- | Decode JSON string to 'Data.Text'
-text :: Decoder Text
-text = auto
-{-# INLINE text #-}
-
--- | Decode JSON string to 'Data.UUID.Types.UUID'
-uuid :: Decoder UUID
-uuid = auto
-{-# INLINE uuid #-}
-
--- | Decode JSON string to 'Data.Version'
-version :: Decoder Version
-version = auto
-{-# INLINE version #-}
-
--- | Decode JSON string to 'Data.Local.Time.ZonedTime'
--- using Aeson's instance implementation.
---
--- Supported string formats:
---
--- YYYY-MM-DD HH:MM Z YYYY-MM-DD HH:MM:SS Z YYYY-MM-DD HH:MM:SS.SSS Z
---
--- The first space may instead be a T, and the second space is optional. The Z represents UTC. The Z may be replaced with a time zone offset of the form +0000 or -08:00, where the first two digits are hours, the : is optional and the second two digits (also optional) are minutes.
-zonedTime :: Decoder ZonedTime
-zonedTime = auto
-{-# INLINE zonedTime #-}
-
--- | Decode JSON string to 'Data.Local.Time.LocalTime'
--- using Aeson's instance implementation.
-localTime :: Decoder LocalTime
-localTime = auto
-{-# INLINE localTime #-}
-
--- | Decode JSON string to 'Data.Local.Time.TimeOfDay'
--- using Aeson's instance implementation.
-timeOfDay :: Decoder TimeOfDay
-timeOfDay = auto
-{-# INLINE timeOfDay #-}
-
--- | Decode JSON string to 'Data.Time.Clock.UTCTime'
--- using Aesons's instance implementation
-utcTime :: Decoder UTCTime
-utcTime = auto
-{-# INLINE utcTime #-}
-
--- | Decode JSON string to 'Data.Time.Calendar.Day'
--- using Aesons's instance implementation
-day :: Decoder Day
-day = auto
-{-# INLINE day #-}
-
-#if (MIN_VERSION_time_compat(1,9,2))
--- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
--- using Aesons's instance implementation
---
--- This function requires 'time-compat' >= 1.9.2
-dayOfWeek :: Decoder DayOfWeek
-dayOfWeek = auto
-{-# INLINE dayOfWeek #-}
-#endif
 
 
 -- Continer Decoders
@@ -482,12 +317,14 @@ nullable (Decoder d) = Decoder $ \case
   other -> Just <$> d other
 {-# INLINE nullable #-}
 
+
 -- | Decode JSON array of values to '[a]' of values
 -- using provided 'Decoder'.
 list :: Decoder a -> Decoder [a]
 list (Decoder d) = Decoder $
   listParser d
 {-# INLINE list #-}
+
 
 -- | Decode JSON array of values to 'Vector' of values
 -- using provided 'Decoder'.
@@ -497,6 +334,7 @@ vector (Decoder d) = Decoder $ \case
   other   -> typeMismatch "Array" other
 {-# INLINE vector #-}
 
+
 -- | Decode JSON object to 'HL.HashMap' with 'Data.Text' key
 -- using provided 'Decoder'.
 hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
@@ -504,6 +342,7 @@ hashMapLazy (Decoder d) = Decoder $ \case
   Object xs -> traverse d xs
   val -> typeMismatch "Array" val
 {-|# INLINE hashMapLazy #-}
+
 
 -- | Decode JSON object to 'HS.HashMap' with 'Data.Text' key
 -- using provided 'Decoder'.
@@ -513,11 +352,13 @@ hashMapStrict (Decoder d) = Decoder $ \case
   val -> typeMismatch "Array" val
 {-|# INLINE hashMapStrict #-}
 
+
 -- | Decode JSON object to 'ML.Map' with 'Data.Text' key
 -- using provided 'Decoder'.
 mapLazy :: Decoder a -> Decoder (ML.Map Text a)
 mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
 {-|# INLINE mapStrict #-}
+
 
 -- | Decode JSON object to 'MS.Map' with 'Data.Text' key
 -- using provided 'Decoder'.
@@ -546,6 +387,7 @@ jsonNull a = Decoder $ \case
   val    -> typeMismatch "null" val
 {-# INLINE jsonNull #-}
 
+
 -- | Extract JSON value from JSON object key
 --
 -- >>> decode (key "data" int) "{\"data\": 42}"
@@ -556,6 +398,7 @@ key t (Decoder d) = Decoder $ \case
   val        -> typeMismatch "Object" val
 {-# INLINE key #-}
 
+
 -- | Extract JSON value from JSON object keys
 --
 -- >>> decode (at ["data", "value"] int) "{\"data\": {\"value\": 42}}"
@@ -563,6 +406,7 @@ key t (Decoder d) = Decoder $ \case
 at :: [Text] -> Decoder a -> Decoder a
 at pth d = foldr key d pth
 {-# INLINE at #-}
+
 
 -- | Extract JSON value from JSON array index
 --
@@ -577,6 +421,7 @@ index i (Decoder d) = Decoder $ \val ->
     _         -> typeMismatch "Array" val
 {-# INLINE index #-}
 
+
 -- | Extract JSON value from JSON array indexes
 --
 -- > >>> decode (indexes [0,1,0] int) "[[true, [42]]]"
@@ -584,6 +429,7 @@ index i (Decoder d) = Decoder $ \val ->
 indexes :: [Int] -> Decoder a -> Decoder a
 indexes pth d = foldr index d pth
 {-# INLINE indexes #-}
+
 
 -- $jsonpath
 -- Combinators using Aeson's 'JSONPathElement' and 'JSONPath' types.
@@ -605,6 +451,7 @@ element (Key txt) = key txt
 element (Index i) = index i
 {-# INLINE element #-}
 
+
 -- | Decode value from deep JSON structure.
 --
 -- >>> decode (path [Key "data", Index 0] bool) "{\"data\":[true, false, false]}"
@@ -612,6 +459,7 @@ element (Index i) = index i
 path :: JSONPath -> Decoder a -> Decoder a
 path pth d = foldr element d pth
 {-# INLINE path #-}
+
 
 -- | Try a decoder and get back a 'Just a' if it succeeds and 'Nothing' if it fails.
 -- In other words, this decoder always succeeds with a 'Maybe a' value.
@@ -625,8 +473,9 @@ maybe (Decoder d) =
   Decoder $ \val ->
     case parse d val of
       Success x -> pure (Just x)
-      Error _ -> pure Nothing
+      Error _   -> pure Nothing
 {-# INLINE maybe #-}
+
 
 -- | Try a decoder and get back a 'Right a' if it succeeds and a 'Left String' if it fails.
 -- In other words, this decoder always succeeds with an 'Either String a' value.
@@ -642,6 +491,7 @@ either (Decoder d) =
       Success x -> pure (Right x)
       Error err -> pure (Left err)
 {-# INLINE either #-}
+
 
 -- | Try a number of decoders in order and return the first success.
 --
@@ -659,7 +509,209 @@ oneOf (first :| rest) =
   foldl (<|>) first rest
 {-# INLINE oneOf #-}
 
+
+-- Basic Decoders
+
+-- | Decode any JSON value to 'Void' value
+-- which is impossible to construct.
+--
+-- __This Decoder is guarenteed to fail.__
+void :: Decoder Void
+void = auto
+{-# INLINE void #-}
+
+
+-- | Decode JSON null into '()'
+unit :: Decoder ()
+unit = auto
+{-# INLINE unit #-}
+
+
+-- | Decode JSON booleans to Haskell 'Data.Bool'
+bool :: Decoder Bool
+bool = auto
+{-# INLINE bool #-}
+
+
+-- | Decode JSON number to 'Data.Int.Int'
+int :: Decoder Int
+int = auto
+{-# INLINE int #-}
+
+
+-- | Decode JSON number to 'Data.Int.Int8'
+int8 :: Decoder Int8
+int8 = auto
+{-# INLINE int8 #-}
+
+
+-- | Decode JSON number to 'Data.Int.Int16'
+int16 :: Decoder Int16
+int16 = auto
+{-# INLINE int16 #-}
+
+
+-- | Decode JSON number to 'Data.Int.Int32'
+int32 :: Decoder Int32
+int32 = auto
+{-# INLINE int32 #-}
+
+
+-- | Decode JSON number to 'Data.Int.Int64'
+int64 :: Decoder Int64
+int64 = auto
+{-# INLINE int64 #-}
+
+
+-- | Decode JSON number to unbounded 'Integer'
+integer :: Decoder Integer
+integer = auto
+{-# INLINE integer #-}
+
+
+#if (MIN_VERSION_base(4,8,0))
+-- | Decode JSON number to GHC's 'GHC.Natural' (non negative)
+--
+-- This function requires 'base' >= 4.8.0
+natural :: Decoder Natural
+natural = auto
+{-# INLINE natural #-}
+#endif
+
+
+-- | Decode JSON number to bounded 'Data.Word.Word'
+word :: Decoder Word
+word = auto
+{-# INLINE word #-}
+
+
+-- | Decode JSON number to bounded 'Data.Word.Word8'
+word8 :: Decoder Word8
+word8 = auto
+{-# INLINE word8 #-}
+
+
+-- | Decode JSON number to bounded 'Data.Word.Word16'
+word16 :: Decoder Word16
+word16 = auto
+{-# INLINE word16 #-}
+
+
+-- | Decode JSON number to bounded 'Data.Word.Word32'
+word32 :: Decoder Word32
+word32 = auto
+{-# INLINE word32 #-}
+
+
+-- | Decode JSON number to bounded 'Data.Word.Word64'
+word64 :: Decoder Word64
+word64 = auto
+{-# INLINE word64 #-}
+
+
+-- | Decode JSON number to 'Float'
+float :: Decoder Float
+float = auto
+{-# INLINE float #-}
+
+
+-- | Decode JSON number to 'Double'
+double :: Decoder Double
+double = auto
+{-# INLINE double #-}
+
+
+-- | Decode JSON number to arbitrary precision 'Scientific'
+scientific :: Decoder Scientific
+scientific = auto
+{-# INLINE scientific #-}
+
+
+-- | Decode single character JSON string to 'Data.Char'
+char :: Decoder Char
+char = auto
+{-# INLINE char #-}
+
+
+-- | Decode JSON string to 'Data.String'
+string :: Decoder String
+string = auto
+{-# INLINE string #-}
+
+
+-- | Decode JSON string to 'Data.Text'
+text :: Decoder Text
+text = auto
+{-# INLINE text #-}
+
+
+-- | Decode JSON string to 'Data.UUID.Types.UUID'
+uuid :: Decoder UUID
+uuid = auto
+{-# INLINE uuid #-}
+
+
+-- | Decode JSON string to 'Data.Version'
+version :: Decoder Version
+version = auto
+{-# INLINE version #-}
+
+
+-- | Decode JSON string to 'Data.Local.Time.ZonedTime'
+-- using Aeson's instance implementation.
+--
+-- Supported string formats:
+--
+-- YYYY-MM-DD HH:MM Z YYYY-MM-DD HH:MM:SS Z YYYY-MM-DD HH:MM:SS.SSS Z
+--
+-- The first space may instead be a T, and the second space is optional. The Z represents UTC. The Z may be replaced with a time zone offset of the form +0000 or -08:00, where the first two digits are hours, the : is optional and the second two digits (also optional) are minutes.
+zonedTime :: Decoder ZonedTime
+zonedTime = auto
+{-# INLINE zonedTime #-}
+
+
+-- | Decode JSON string to 'Data.Local.Time.LocalTime'
+-- using Aeson's instance implementation.
+localTime :: Decoder LocalTime
+localTime = auto
+{-# INLINE localTime #-}
+
+
+-- | Decode JSON string to 'Data.Local.Time.TimeOfDay'
+-- using Aeson's instance implementation.
+timeOfDay :: Decoder TimeOfDay
+timeOfDay = auto
+{-# INLINE timeOfDay #-}
+
+
+-- | Decode JSON string to 'Data.Time.Clock.UTCTime'
+-- using Aesons's instance implementation
+utcTime :: Decoder UTCTime
+utcTime = auto
+{-# INLINE utcTime #-}
+
+
+-- | Decode JSON string to 'Data.Time.Calendar.Day'
+-- using Aesons's instance implementation
+day :: Decoder Day
+day = auto
+{-# INLINE day #-}
+
+
+#if (MIN_VERSION_time_compat(1,9,2))
+-- | Decode JSON string to 'Data.Time.Calendar.Compat.DayOfWeek'
+-- using Aesons's instance implementation
+--
+-- This function requires 'time-compat' >= 1.9.2
+dayOfWeek :: Decoder DayOfWeek
+dayOfWeek = auto
+{-# INLINE dayOfWeek #-}
+#endif
+
+
+
 -- Decoding
+
 
 -- $running
 --
@@ -682,6 +734,7 @@ decode :: Decoder a -> LB.ByteString -> Maybe a
 decode (Decoder d) =
   Parser.decodeWith ParserI.jsonEOF (parse d)
 {-# INLINE decode #-}
+
 
 -- | Efficiently deserialize a JSON value from a lazy 'L.ByteString'.
 -- If this fails due to incomplete or invalid input, 'Nothing' is
@@ -712,6 +765,7 @@ eitherDecode' (Decoder d) =
 
 -- Strict Decoding
 
+
 -- | Efficiently deserialize a JSON value from a strict 'B.ByteString'.
 -- If this fails due to incomplete or invalid input, 'Nothing' is
 -- returned.
@@ -725,6 +779,7 @@ decodeStrict :: Decoder a -> B.ByteString -> Maybe a
 decodeStrict (Decoder d) =
   Parser.decodeStrictWith ParserI.jsonEOF (parse d)
 {-# INLINE decodeStrict #-}
+
 
 -- | Efficiently deserialize a JSON value from a strict 'B.ByteString'.
 -- If this fails due to incomplete or invalid input, 'Nothing' is
@@ -755,6 +810,7 @@ eitherDecodeStrict' (Decoder d) =
 
 -- File Decoding
 
+
 -- | Efficiently deserialize a JSON value from a file.
 -- If this fails due to incomplete or invalid input, 'Nothing' is
 -- returned.
@@ -768,6 +824,7 @@ decodeFileStrict :: Decoder a -> FilePath -> IO (Maybe a)
 decodeFileStrict dec =
   fmap (decodeStrict dec) . B.readFile
 {-# INLINE decodeFileStrict #-}
+
 
 -- | Efficiently deserialize a JSON value from a file.
 -- If this fails due to incomplete or invalid input, 'Nothing' is
@@ -783,11 +840,13 @@ decodeFileStrict' dec =
   fmap (decodeStrict' dec) . B.readFile
 {-# INLINE decodeFileStrict' #-}
 
+
 -- | Like 'decodeFileStrict' but returns an error message when decoding fails.
 eitherDecodeFileStrict :: Decoder a -> FilePath -> IO (Either String a)
 eitherDecodeFileStrict dec =
   fmap (eitherDecodeStrict dec) . B.readFile
 {-# INLINE eitherDecodeFileStrict #-}
+
 
 -- | Like 'decodeFileStrict'' but returns an error message when decoding fails.
 eitherDecodeFileStrict' :: Decoder a -> FilePath -> IO (Either String a)
@@ -798,9 +857,11 @@ eitherDecodeFileStrict' dec =
 
 -- Private functions Aeson doesn't expose
 
+
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
 eitherFormatError = Prelude.either (Left . uncurry AI.formatError) Right
 {-# INLINE eitherFormatError #-}
+
 
 #if (MIN_VERSION_aeson(1,4,3))
 #else
@@ -812,6 +873,7 @@ eitherFormatError = Prelude.either (Left . uncurry AI.formatError) Right
 unexpected :: Value -> Parser a
 unexpected actual = Fail.fail $ "unexpected " ++ typeOf actual
 {-# INLINE unexpected #-}
+
 
 typeOf :: Value -> String
 typeOf v = case v of
