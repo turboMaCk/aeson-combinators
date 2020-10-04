@@ -15,15 +15,15 @@ cache:
 matrix:
   include:
     # Cabal
-  - ghc: "8.4.4"
-  - ghc: "8.6"
-  - ghc: "8.8.4"
-  - ghc: "8.10.2"
+  - ghc: 8.4.4
+  - ghc: 8.6
+  - ghc: 8.8.4
+  - ghc: 8.10.2
 
     # Stack
-  - ghc: "7.10"
+  - ghc: 7.10
     env: STACK_YAML="$TRAVIS_BUILD_DIR/stack-7.10.yaml"
-  - ghc: "7.8"
+  - ghc: 7.8
     env: STACK_YAML="$TRAVIS_BUILD_DIR/stack-7.8.yaml"
 
 install:
@@ -40,7 +40,6 @@ install:
       stack --version
       stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
     fi
-
 
 script:
   - |
