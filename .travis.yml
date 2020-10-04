@@ -1,7 +1,7 @@
 sudo: true
 language: haskell
 
-# ghc:
+cabal: "3.0"
 
 cache:
   directories:
