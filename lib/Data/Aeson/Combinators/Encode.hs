@@ -49,6 +49,7 @@ module Data.Aeson.Combinators.Encode (
 ) where
 
 import           Control.Applicative
+import           Control.Monad                        (join)
 import           Data.Aeson                           (ToJSON, Value (..))
 import qualified Data.Aeson                           as Aeson
 import qualified Data.Aeson.Encoding                  as E
@@ -217,3 +218,19 @@ encode encoder = E.encodingToLazyByteString . (toEncoding encoder)
 
 toEncoding :: Encoder a -> a -> E.Encoding
 toEncoding (Encoder enc) = E.value . enc
+
+
+flatten :: Vector Value -> Value
+flatten vector =
+  foldl doFlat (Array Vector.empty) vector
+  where
+    doFlat acc val =
+      case val of
+        Array vec ->
+          case acc of
+            Array acc' -> flatten $ acc' <> vec
+            x          -> Array $ Vector.cons x vec
+        _         ->
+          case acc of
+            Array acc' -> Array $ Vector.cons val acc'
+            x          -> Array $ Vector.fromList [x, val]
