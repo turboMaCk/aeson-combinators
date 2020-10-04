@@ -207,6 +207,7 @@ In cases where you want to chain multiple divides in flat manner
 while avoiding recursive flattening use provided 'flatDivide' combinator.
 
 Given this record:
+
 >>> :{
 data DividableRec = DividableRec
   { dTitle :: String
@@ -216,6 +217,7 @@ data DividableRec = DividableRec
 :}
 
 And 'Encoder' defined as:
+
 >>> :{
 myFlatEncoder :: Encoder DividableRec
 myFlatEncoder = flatDivide (\r -> (dTitle r, r)) auto $
