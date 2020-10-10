@@ -20,5 +20,6 @@ jobs:
       - uses: cachix/install-nix-action@v11
         with:
           nix_path: nixpkgs=channel:nixos-unstable
+      - run: nix-env --quiet -j8 -iA cachix -f https://cachix.org/api/v1/install
       - run: /nix/var/nix/profiles/per-user/runner/profile/bin/cachix use miso-haskell
       - run: nix-build -A ghcjs
