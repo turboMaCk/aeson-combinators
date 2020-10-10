@@ -1,6 +1,7 @@
 # Aeson Combinators
 
 [![Build Status](https://travis-ci.org/turboMaCk/aeson-combinators.svg?branch=master)](https://travis-ci.org/turboMaCk/aeson-combinators)
+[![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FturboMaCk%2Faeson-combinators%2Fbadge%3Fref%3Dmaster&style=flat)](https://actions-badge.atrox.dev/turboMaCk/aeson-combinators/goto?ref=master)
 
 This library defines [**low overhead**](#internals) value space `Decoder`
 on top of Aeson's Parser for combinator style decoding.
