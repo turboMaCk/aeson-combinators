@@ -4,7 +4,7 @@
 [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FturboMaCk%2Faeson-combinators%2Fbadge%3Fref%3Dmaster&style=flat)](https://actions-badge.atrox.dev/turboMaCk/aeson-combinators/goto?ref=master)
 [![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
-This library defines [**low overhead**](#internals) value space `Decoder`
+[**Low overhead**](#internals) value space `Decoder`
 on top of Aeson's Parser for combinator style decoding.
 
 This library is compatible with GHC **7.6** and later as well as recent versions of **GHCJS**.
