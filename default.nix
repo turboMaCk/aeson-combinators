@@ -18,7 +18,10 @@ let
     url = "https://github.com/dmjio/miso/archive/561ffad.tar.gz";
     sha256 = "1wwzckz2qxb873wdkwqmx9gmh0wshcdxi7gjwkba0q51jnkfdi41";
   }) {};
-in {
-  ghc = pkgs.haskellPackages.aeson-combinators;
+in with pkgs; {
+  ghc = haskellPackages.aeson-combinators;
   ghcjs = ghcjs.pkgs.haskell.packages.ghcjs.callCabal2nix "aeson-combinators" ./. {};
+  ghc865 = haskell.packages.ghc865.aeson-combinators;
+  ghc8101 = haskell.packages.ghc8101.aeson-combinators;
+  ghc901 = haskell.packages.ghc901.aeson-combinators;
 }
