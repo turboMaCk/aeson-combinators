@@ -29,14 +29,14 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - run: nix-build -A ghc8101
-  ghc901:
+  ghc883:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.1
       - uses: cachix/install-nix-action@v11
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-      - run: nix-build -A ghc901
+      - run: nix-build -A ghc883
   ghcjs:
     runs-on: ubuntu-latest
     steps:
