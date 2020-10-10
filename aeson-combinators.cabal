@@ -3,7 +3,7 @@ name:                aeson-combinators
 version:             0.0.2.1
 synopsis:            Aeson combinators for dead simple JSON decoding
 description:
-    This library defines low overhead value space `Decoder`
+    Low overhead value space `Decoder`
     on top of Aeson's Parser for combinator style decoding.
 
 bug-reports:         https://github.com/turboMaCk/aeson-combinators/issues
