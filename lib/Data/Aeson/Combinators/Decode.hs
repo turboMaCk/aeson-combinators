@@ -360,7 +360,7 @@ hashMapStrict (Decoder d) = Decoder $ \case
 -- using provided 'Decoder'.
 mapLazy :: Decoder a -> Decoder (ML.Map Text a)
 mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
-{-# INLINE mapStrict #-}
+{-# INLINE mapLazy #-}
 
 
 -- | Decode JSON object to 'MS.Map' with 'Data.Text' key
