@@ -20,6 +20,6 @@ jobs:
       - uses: cachix/install-nix-action@v11
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-      - run: nix-env -i cachix
+      - uses: cachix/cachix-action@v6
       - run: cachix use miso-haskell
       - run: nix-build -A ghcjs
