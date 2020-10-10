@@ -52,7 +52,6 @@ module Data.Aeson.Combinators.Decode (
   , either
   , oneOf
 -- * Decoding Primitive Values
---
 -- *** Void, Unit, Bool
   , void
   , unit, bool
@@ -75,8 +74,8 @@ module Data.Aeson.Combinators.Decode (
 #if (MIN_VERSION_time_compat(1,9,2))
   , dayOfWeek
 #endif
--- * Running Decoders
--- $running
+-- * Decoding ByteStrings
+-- $decoding
 -- *** Decoding From Byte Strings
   , decode, decode'
   , eitherDecode, eitherDecode'
@@ -85,6 +84,9 @@ module Data.Aeson.Combinators.Decode (
 -- *** Decoding Files
   , decodeFileStrict, decodeFileStrict'
   , eitherDecodeFileStrict, eitherDecodeFileStrict'
+-- * Parsing (Running Decoders)
+  , parseMaybe
+  , parseEither
   ) where
 
 import           Prelude                    hiding (either, fail, maybe)
@@ -99,7 +101,8 @@ import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
-import           Data.Aeson.Types
+import           Data.Aeson.Types           hiding (parseEither, parseMaybe)
+import qualified Data.Aeson.Types           as ATypes
 
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as LB
@@ -340,7 +343,7 @@ vector (Decoder d) = Decoder $ \case
 hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
 hashMapLazy (Decoder d) = Decoder $ \case
   Object xs -> traverse d xs
-  val -> typeMismatch "Array" val
+  val       -> typeMismatch "Array" val
 {-|# INLINE hashMapLazy #-}
 
 
@@ -349,7 +352,7 @@ hashMapLazy (Decoder d) = Decoder $ \case
 hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
 hashMapStrict (Decoder d) = Decoder $ \case
   Object xs -> traverse d xs
-  val -> typeMismatch "Array" val
+  val       -> typeMismatch "Array" val
 {-|# INLINE hashMapStrict #-}
 
 
@@ -384,7 +387,7 @@ mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
 jsonNull :: a -> Decoder a
 jsonNull a = Decoder $ \case
   Null -> pure a
-  val    -> typeMismatch "null" val
+  val  -> typeMismatch "null" val
 {-# INLINE jsonNull #-}
 
 
@@ -395,7 +398,7 @@ jsonNull a = Decoder $ \case
 key :: Text -> Decoder a -> Decoder a
 key t (Decoder d) = Decoder $ \case
   Object v -> d =<< v .: t
-  val        -> typeMismatch "Object" val
+  val      -> typeMismatch "Object" val
 {-# INLINE key #-}
 
 
@@ -713,7 +716,7 @@ dayOfWeek = auto
 -- Decoding
 
 
--- $running
+-- $decoding
 --
 -- Following functions are evivalent to ones provided by Aeson itself.
 -- The only difference is that versions implemented by Aeson
@@ -853,6 +856,23 @@ eitherDecodeFileStrict' :: Decoder a -> FilePath -> IO (Either String a)
 eitherDecodeFileStrict' dec =
   fmap (eitherDecodeStrict' dec) . B.readFile
 {-# INLINE eitherDecodeFileStrict' #-}
+
+
+-- Parsing
+
+
+-- | Run decoder over 'Value'.
+-- Returns 'Nothing' in case of failure
+parseMaybe :: Decoder a -> Value -> Maybe a
+parseMaybe (Decoder f) = ATypes.parseMaybe f
+{-# INLINE parseMaybe #-}
+
+
+-- | Run decoder over 'Value'.
+-- Returns 'Left' with error message in case of failure
+parseEither :: Decoder a -> Value -> Either String a
+parseEither (Decoder f) = ATypes.parseEither f
+{-# INLINE parseEither #-}
 
 
 -- Private functions Aeson doesn't expose
