@@ -11,7 +11,7 @@
 -- Aeson decoding API is closed over the type class 'FromJSON'.
 -- Because of this there is one to one mapping between JSON
 -- format and data decoded from it.
--- While this is handy in many situations it forces
+-- While this is handy in many situations, in others it forces
 -- users of Aeson library to define proxy types and
 -- data wrappers just for sake of implementing instance
 -- of 'FromJSON'.
