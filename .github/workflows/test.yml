@@ -13,7 +13,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: cachix/cachix-action@v6
         with:
-          name: mycache
+          name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc
 
@@ -26,7 +26,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: cachix/cachix-action@v6
         with:
-          name: mycache
+          name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc865
 
@@ -39,7 +39,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: cachix/cachix-action@v6
         with:
-          name: mycache
+          name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc8101
 
@@ -52,7 +52,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: cachix/cachix-action@v6
         with:
-          name: mycache
+          name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc883
 
@@ -65,7 +65,7 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
       - uses: cachix/cachix-action@v6
         with:
-          name: mycache
+          name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-env --quiet -j8 -iA cachix -f https://cachix.org/api/v1/install
       - run: /nix/var/nix/profiles/per-user/runner/profile/bin/cachix use miso-haskell
