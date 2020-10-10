@@ -344,7 +344,7 @@ hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
 hashMapLazy (Decoder d) = Decoder $ \case
   Object xs -> traverse d xs
   val       -> typeMismatch "Array" val
-{-|# INLINE hashMapLazy #-}
+{-# INLINE hashMapLazy #-}
 
 
 -- | Decode JSON object to 'HS.HashMap' with 'Data.Text' key
@@ -353,21 +353,21 @@ hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
 hashMapStrict (Decoder d) = Decoder $ \case
   Object xs -> traverse d xs
   val       -> typeMismatch "Array" val
-{-|# INLINE hashMapStrict #-}
+{-# INLINE hashMapStrict #-}
 
 
 -- | Decode JSON object to 'ML.Map' with 'Data.Text' key
 -- using provided 'Decoder'.
 mapLazy :: Decoder a -> Decoder (ML.Map Text a)
 mapLazy dec = ML.fromList . HL.toList <$> hashMapLazy dec
-{-|# INLINE mapStrict #-}
+{-# INLINE mapStrict #-}
 
 
 -- | Decode JSON object to 'MS.Map' with 'Data.Text' key
 -- using provided 'Decoder'.
 mapStrict :: Decoder a -> Decoder (MS.Map Text a)
 mapStrict dec = MS.fromList . HL.toList <$> hashMapLazy dec
-{-|# INLINE mapStrict #-}
+{-# INLINE mapStrict #-}
 
 
 -- Combinators
