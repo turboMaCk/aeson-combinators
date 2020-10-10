@@ -14,10 +14,12 @@ jobs:
           nix_path: nixpkgs=channel:nixos-unstable
   ghc:
     needs: setup
+    runs-on: ubuntu-latest
     steps:
       - nix-build -A ghc
   ghcjs:
     needs: setup
+    runs-on: ubuntu-latest
     steps:
       - nix-env -iA nixpkgs.cachix
       - cachix use miso-haskell
