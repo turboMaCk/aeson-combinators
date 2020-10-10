@@ -883,9 +883,7 @@ eitherFormatError = Prelude.either (Left . uncurry AI.formatError) Right
 {-# INLINE eitherFormatError #-}
 
 
-#if (MIN_VERSION_aeson(1,4,3))
-#else
-
+#if !(MIN_VERSION_aeson(1,4,3))
 -- These functions are not exposed in aeson 1.4.2.0
 -- implementation is copied from
 -- https://hackage.haskell.org/package/aeson-1.4.6.0/docs/src/Data.Aeson.Types.FromJSON.html#unexpected
@@ -904,5 +902,4 @@ typeOf v = case v of
     Bool _   -> "Boolean"
     Null     -> "Null"
 {-# INLINE typeOf #-}
-
 #endif
