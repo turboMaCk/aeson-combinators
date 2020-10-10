@@ -17,12 +17,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
       - run: nix-build -A ghc
   ghcjs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
       - uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
       - run: nix-env -iA nixpkgs.cachix
       - run: cachix use miso-haskell
       - run: nix-build -A ghcjs
