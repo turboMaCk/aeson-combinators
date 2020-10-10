@@ -16,11 +16,11 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - nix-build -A ghc
+      - run: nix-build -A ghc
   ghcjs:
     needs: setup
     runs-on: ubuntu-latest
     steps:
-      - nix-env -iA nixpkgs.cachix
-      - cachix use miso-haskell
-      - nix-build -A ghcjs
+      - run: nix-env -iA nixpkgs.cachix
+      - run: cachix use miso-haskell
+      - run: nix-build -A ghcjs
