@@ -1,7 +1,5 @@
-import Test.Hspec
-
 import qualified JSONDecodeSpec as Decode
+import           Test.Hspec     (hspec)
 
 main :: IO ()
-main = hspec $ do
-  Decode.spec
+main = hspec Decode.spec
