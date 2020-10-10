@@ -67,6 +67,5 @@ jobs:
         with:
           name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - run: nix-env --quiet -j8 -iA cachix -f https://cachix.org/api/v1/install
-      - run: /nix/var/nix/profiles/per-user/runner/profile/bin/cachix use miso-haskell
+      - run: cachix use miso-haskell
       - run: nix-build -A ghcjs
