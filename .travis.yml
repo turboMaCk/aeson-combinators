@@ -1,4 +1,20 @@
-language: haskell
-ghc:
-  - "8.4.4"
-  - "8.6"
+language: nix
+nix: 2.3.7
+sudo: false
+
+matrix:
+  include:
+    - attr: ghc
+      env: ATTR=ghc
+    - attr: ghcjs
+      env: ATTR=ghcjs
+
+install:
+  - echo "trusted-users = $USER" | sudo tee -a /etc/nix/nix.conf
+  - sudo systemctl restart nix-daemon
+  - nix-env -iA nixpkgs.cachix
+  - cachix use miso-haskell
+  - nix path-info --all > /tmp/store-path-pre-build
+
+script:
+  nix-build -A $ATTR

@@ -1,0 +1,71 @@
+name: "Test"
+
+on:
+  pull_request:
+
+jobs:
+  ghc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.1
+      - uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v6
+        with:
+          name: aeson-combinators
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - run: nix-build -A ghc
+
+  ghc865:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.1
+      - uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v6
+        with:
+          name: aeson-combinators
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - run: nix-build -A ghc865
+
+  ghc8101:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.1
+      - uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v6
+        with:
+          name: aeson-combinators
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - run: nix-build -A ghc8101
+
+  ghc883:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.1
+      - uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v6
+        with:
+          name: aeson-combinators
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - run: nix-build -A ghc883
+
+  ghcjs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.1
+      - uses: cachix/install-nix-action@v11
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v6
+        with:
+          name: aeson-combinators
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - run: cachix use miso-haskell
+      - run: nix-build -A ghcjs
