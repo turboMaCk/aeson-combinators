@@ -869,7 +869,7 @@ parseMaybe (Decoder f) = ATypes.parseMaybe f
 
 
 -- | Run decoder over 'Value'.
--- Returns 'Nothing' in case of failure
+-- Returns 'Left' with error message in case of failure
 parseEither :: Decoder a -> Value -> Either String a
 parseEither (Decoder f) = ATypes.parseEither f
 {-# INLINE parseEither #-}
