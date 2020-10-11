@@ -10,13 +10,14 @@
 --
 -- Aeson decoding API is closed over the type class 'FromJSON'.
 -- Because of this there is one to one mapping between JSON
--- format and data decoded from it.
+-- format and data decoded from it (decoding is closed over types).
 -- While this is handy in many situations, in others it forces
 -- users of Aeson library to define proxy types and
--- data wrappers just for sake of implementing instance
--- of 'FromJSON'.
+-- data wrappers just for sake of implementing multiple instances
+-- of 'FromJSON' class.
 -- This module provides value level 'Decoder' which can be used
--- instead of instance implementation.
+-- instead of instance implementation to define any number of JSON
+-- decoders for the same data type.
 --
 module Data.Aeson.Combinators.Decode (
   -- * Example Usage
@@ -37,7 +38,7 @@ module Data.Aeson.Combinators.Decode (
   , mapLazy, mapStrict
 -- * Combinators
   , jsonNull
--- *** Objects:
+-- *** Objects
   , key
   , at
 -- *** Arrays
@@ -61,13 +62,13 @@ module Data.Aeson.Combinators.Decode (
 #if (MIN_VERSION_base(4,8,0))
   , natural
 #endif
--- *** Floating Points
+-- *** Real Numbers
   , float, double
   , scientific
 -- *** Strings
   , char, text, string
   , uuid, version
--- * Decoding Time
+-- * Time
   , zonedTime, localTime, timeOfDay
   , utcTime
   , day
@@ -136,7 +137,7 @@ import           Data.Traversable           (traverse)
 
 
 -- $usage
--- As mentioned above, combinators and type classes can be used together.
+-- Combinators and type classes can be used together.
 --
 -- __Decode type nested in json__
 --
@@ -169,13 +170,14 @@ import           Data.Traversable           (traverse)
 --
 -- > -- data Person defined above ^
 -- >
--- >  type Token = Text
+-- > -- using alias for simplicity
+-- > type Token = Text
 -- >
--- >  decodePersonWithToken :: ByteString -> Maybe (Token, Person)
--- >  decodePersonWithToken json = ACD.decode decoder json
--- >      where decoder =
--- >              (,) <$> ACD.key "token" ACD.text
--- >                  <*> ACD.key "person" ACD.auto
+-- > decodePersonWithToken :: ByteString -> Maybe (Token, Person)
+-- > decodePersonWithToken json = ACD.decode decoder json
+-- >     where decoder =
+-- >             (,) <$> ACD.key "token" ACD.text
+-- >                 <*> ACD.key "person" ACD.auto
 --
 -- Which can be used as following
 --
@@ -217,6 +219,8 @@ import           Data.Traversable           (traverse)
 -- 'decodeFileStrict', 'decodeFileStrict''
 -- 'eitherDecodeFileStrict', 'eitherDecodeFileStrict''
 -- also provided by this module.
+--
+-- When working with 'Value', use 'parseMaybe' or 'parseEither' function.
 --
 -- === Functor to map function over 'Decoder'
 --
