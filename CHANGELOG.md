@@ -1,7 +1,10 @@
 # Revision history for aeson-combinators
 
-## 0.0.2.1 -- 2020-20-09
-* Add README to extra source files
+## 0.0.3.0 -- 2020-10-11
+* Combinators for dealing with failure
+* `oneOf` function
+* `parseMaybe` and `parseEither`
+* Documentation improvements
 
 ## 0.0.2.1 -- 2020-03-08
 * Add README to extra source files
