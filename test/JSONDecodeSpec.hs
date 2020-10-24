@@ -87,11 +87,11 @@ arraySpec = do
   describe "index" $ do
     it "decode singleton by index" $ do
       JD.decode (JD.index 0 decoder) "[{\"name\": \"Sanders\", \"nick\": \"bern\"}]"
-        `shouldBe` (Just $ Object "Sanders" "bern")
+        `shouldBe` Just (Object "Sanders" "bern")
 
     it "should decode nth index" $ do
       JD.decode (JD.index 1 decoder) "[false, {\"name\": \"Sanders\", \"nick\": \"bern\"}, true]"
-        `shouldBe` (Just $ Object "Sanders" "bern")
+        `shouldBe` Just (Object "Sanders" "bern")
 
 monadSpec :: Spec
 monadSpec =
@@ -104,15 +104,15 @@ monadSpec =
 
     it "should work as a dummy value" $ do
       JD.decode (JD.string >>= pure) "\"foo\""
-        `shouldBe` (Just "foo")
+        `shouldBe` Just "foo"
 
     it "should turn string to sum" $ do
       JD.decode (JD.string >>= fromText) "\"foo\""
-        `shouldBe` (Just Foo)
+        `shouldBe` Just Foo
 
     it "should fail with right error" $ do
       JD.eitherDecode (JD.string >>= fromText) "\"foobar\""
-        `shouldBe` (Left "Error in $: unknown")
+        `shouldBe` Left "Error in $: unknown"
 
 alternativeSpec :: Spec
 alternativeSpec =
@@ -121,11 +121,11 @@ alternativeSpec =
           Left <$> JD.bool <|> Right <$> decoder
 
     it "should decode first alternative" $ do
-      JD.decode dec "false" `shouldBe` (Just $ Left False)
+      JD.decode dec "false" `shouldBe` Just (Left False)
 
     it "should decode second alternative" $ do
       JD.decode dec "{\"name\": \"Joe\",\"nick\": \"jd\"}"
-        `shouldBe` (Just $ Right $ Object "Joe" "jd")
+        `shouldBe` Just (Right $ Object "Joe" "jd")
 
 jsonNullSpec :: Spec
 jsonNullSpec =
@@ -139,10 +139,10 @@ jsonNullSpec =
           JD.jsonNull Foo <|> (barDec =<< JD.text)
 
     it "should decode Foo from null" $ do
-      JD.decode dec "null" `shouldBe` (Just Foo)
+      JD.decode dec "null" `shouldBe` Just Foo
 
     it "should decode Bar from string" $ do
-      JD.decode dec "\"bar\"" `shouldBe` (Just Bar)
+      JD.decode dec "\"bar\"" `shouldBe` Just Bar
 
 spec :: Spec
 spec = do

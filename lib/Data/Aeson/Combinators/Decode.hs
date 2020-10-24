@@ -528,7 +528,7 @@ void = auto
 {-# INLINE void #-}
 
 
--- | Decode JSON null into '()'
+-- | Decode JSON null into @()@
 unit :: Decoder ()
 unit = auto
 {-# INLINE unit #-}
@@ -757,11 +757,13 @@ decode' (Decoder d) =
   Parser.decodeWith ParserI.jsonEOF' (parse d)
 {-# INLINE decode' #-}
 
+
 -- | Like 'decode' but returns an error message when decoding fails.
 eitherDecode :: Decoder a -> LB.ByteString -> Either String a
 eitherDecode (Decoder d) =
   eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (AI.iparse d)
 {-# INLINE eitherDecode #-}
+
 
 -- | Like 'decode'' but returns an error message when decoding fails.
 eitherDecode' :: Decoder a -> LB.ByteString -> Either String a
@@ -802,11 +804,13 @@ decodeStrict' (Decoder d) =
   Parser.decodeStrictWith ParserI.jsonEOF' (parse d)
 {-# INLINE decodeStrict' #-}
 
+
 -- | Like 'decodeStrict' but returns an error message when decoding fails.
 eitherDecodeStrict :: Decoder a -> B.ByteString -> Either String a
 eitherDecodeStrict (Decoder d) =
   eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF (AI.iparse d)
 {-# INLINE eitherDecodeStrict #-}
+
 
 -- | Like 'decodeStrict'' but returns an error message when decoding fails.
 eitherDecodeStrict' :: Decoder a -> B.ByteString -> Either String a
