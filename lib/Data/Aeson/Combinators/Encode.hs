@@ -231,6 +231,7 @@ newtype Encoder a = Encoder (a -> Value)
 
 instance Contravariant Encoder where
   contramap f (Encoder enc) = Encoder (enc . f)
+  {-# INLINE contramap #-}
 
 
 -- | Run 'Encoder' given a value. this is essentially just a function application.
@@ -280,11 +281,13 @@ type KeyValueEncoder a = a -> Pair
 {-| Object combinators -}
 object :: [KeyValueEncoder a] -> Encoder a
 object xs = Encoder $ \val -> Aeson.object $ fmap (\f -> f val) xs
+{-# INLINE object #-}
 
 
 {-| Define object field -}
 field :: Text -> Encoder b -> (a -> b) -> KeyValueEncoder a
 field name (Encoder enc) get v = (name, enc $ get v)
+{-# INLINE field #-}
 
 
 {-| Object Encoder (alternative)
@@ -311,14 +314,17 @@ field name (Encoder enc) get v = (name, enc $ get v)
 -}
 type KeyValueEncoder' a = a -> [Pair]
 
+
 {-| Object combinators (alternative) -}
 object' :: KeyValueEncoder' a -> Encoder a
 object' f = Encoder $ \val -> Aeson.object $ f val
+{-# INLINE object' #-}
 
 
 {-| Define object field (alternative) -}
 field' :: Text -> Encoder a -> a -> (Text, Value)
 field' name (Encoder enc) val = (name, enc val)
+{-# INLINE field' #-}
 
 
 -- Collections
@@ -327,16 +333,19 @@ field' name (Encoder enc) val = (name, enc val)
 {-| Encode 'Vector' -}
 vector :: Encoder a -> Encoder (Vector a)
 vector (Encoder f) = Encoder $ \val -> Aeson.Array $ f <$> val
+{-# INLINE vector #-}
 
 
 {-| Encode 'List' -}
 list :: Encoder a -> Encoder [a]
 list (Encoder f) = Encoder $ \val -> Aeson.Array $ fromList $ f <$> val
+{-# INLINE list #-}
 
 
 {-| Encode multiple values as array -}
 jsonArray :: [Encoder a] -> Encoder a
 jsonArray xs = Encoder $ \a -> Array $ Vector.fromList $ (\(Encoder f) -> f a) <$> xs
+{-# INLINE jsonArray #-}
 
 
 -- Basic Encoders
@@ -547,6 +556,8 @@ dayOfWeek = auto
 encode :: Encoder a -> a -> BS.ByteString
 encode encoder =
   E.encodingToLazyByteString . toEncoding encoder
+{-# INLINE encode #-}
+
 
 {-| Convert value to encoding
 -}
