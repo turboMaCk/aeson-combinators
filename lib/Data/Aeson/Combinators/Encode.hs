@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP        #-}
-{-# LANGUAGE LambdaCase #-}
 
 -- |
 -- Module      : Data.Aeson.Cominators.Encode
@@ -74,44 +73,39 @@ module Data.Aeson.Combinators.Encode (
 ) where
 
 import           Control.Applicative
-import           Control.Monad                        (join)
+import           Control.Monad              (join)
 import           Data.Functor.Contravariant
 
-import           Data.Aeson                           (ToJSON, Value (..))
-import qualified Data.Aeson                           as Aeson
-import qualified Data.Aeson.Encoding                  as E
-import           Data.Aeson.Types                     (Pair)
-import qualified Data.ByteString.Lazy                 as BS
-import           Data.Text                            (Text)
-import           Data.Vector                          (Vector, fromList)
-import qualified Data.Vector                          as Vector
-import           Data.Void                            (absurd)
+import           Data.Aeson                 (ToJSON, Value (..))
+import qualified Data.Aeson                 as Aeson
+import qualified Data.Aeson.Encoding        as E
+import           Data.Aeson.Types           (Pair)
+import qualified Data.ByteString.Lazy       as BS
+import           Data.Text                  (Text)
+import           Data.Vector                (Vector, fromList, (!?))
+import qualified Data.Vector                as Vector
 
-import           Data.Int                             (Int16, Int32, Int64,
-                                                       Int8)
-import           Data.Text                            (Text)
-import           Data.Time.Calendar                   (Day)
+import           Data.Int                   (Int16, Int32, Int64, Int8)
+import           Data.Time.Calendar         (Day)
 #if (MIN_VERSION_time_compat(1,9,2))
-import           Data.Time.Calendar.Compat            (DayOfWeek)
+import           Data.Time.Calendar.Compat  (DayOfWeek)
 #endif
-import           Data.Time.Clock                      (UTCTime)
-import           Data.Time.LocalTime                  (LocalTime, TimeOfDay,
-                                                       ZonedTime)
-import           Data.UUID.Types                      (UUID)
-import           Data.Vector                          (Vector, (!?))
-import           Data.Version                         (Version)
-import           Data.Void                            (Void)
-import           Data.Word                            (Word, Word16, Word32,
-                                                       Word64, Word8)
+import           Data.Time.Clock            (UTCTime)
+import           Data.Time.LocalTime        (LocalTime, TimeOfDay, ZonedTime)
+import           Data.UUID.Types            (UUID)
+import           Data.Version               (Version)
+import           Data.Void                  (Void)
+import           Data.Word                  (Word, Word16, Word32, Word64,
+                                             Word8)
 #if (MIN_VERSION_base(4,8,0))
-import           GHC.Natural                          (Natural)
+import           GHC.Natural                (Natural)
 #endif
-import qualified Data.HashMap.Lazy                    as HL
-import qualified Data.HashMap.Strict                  as HS
-import qualified Data.Map.Lazy                        as ML
-import qualified Data.Map.Strict                      as MS
-import           Data.Scientific                      (Scientific)
-import           Data.Traversable                     (traverse)
+import qualified Data.HashMap.Lazy          as HL
+import qualified Data.HashMap.Strict        as HS
+import qualified Data.Map.Lazy              as ML
+import qualified Data.Map.Strict            as MS
+import           Data.Scientific            (Scientific)
+import           Data.Traversable           (traverse)
 
 {- $importing
 This module as meant to be import as @qualified@
@@ -236,7 +230,7 @@ instance Contravariant Encoder where
 
 -- | Run 'Encoder' given a value. this is essentially just a function application.
 run :: Encoder a -> a -> Value
-run (Encoder f) a = f a
+run (Encoder f) = f
 {-# INLINE run #-}
 
 
@@ -253,7 +247,7 @@ type KeyValueEncoder a = a -> Pair
 
 
 field :: Text -> Encoder b -> (a -> b) -> KeyValueEncoder a
-field name (Encoder enc) get = \v -> (name, enc $ get v)
+field name (Encoder enc) get v = (name, enc $ get v)
 
 
 object :: [KeyValueEncoder a] -> Encoder a
@@ -287,8 +281,8 @@ array xs = Encoder $ \a -> Array $ Vector.fromList $ (\(Encoder f) -> f a) <$> x
 
 
 encode :: Encoder a -> a -> BS.ByteString
-encode encoder = E.encodingToLazyByteString . (toEncoding encoder)
-
+encode encoder =
+  E.encodingToLazyByteString . toEncoding encoder
 
 
 -- Basic Encoders
