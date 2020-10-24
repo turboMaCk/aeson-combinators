@@ -7,7 +7,7 @@
 [**Low overhead**](#internals) value space `Decoder`
 on top of Aeson's Parser for combinator style decoding.
 
-This library is compatible with GHC **7.6** and later as well as recent versions of **GHCJS**.
+This library is compatible with GHC as well as recent versions of **GHCJS**.
 
 __Encoding to JSON is currently not supported but might be added in the future version.__
 
@@ -18,14 +18,8 @@ describing what this library attempts to solve.
 
 `Decoder a` type is a function `Value -> Parser a` the same as `fromJSON`
 member function of `FromJSON` class. This means there should be near zero overhead.
-Aeson types and functions are reused where possible.
-
-## TODO
-
-- [x] Documentation
-- [x] Support for more GHC versions
-- [x] Default decoders for Containers
-- [ ] Encoding API
+Aeson types and functions are reused where possible. Similarly `Encoder a` type
+follow `toJSON` from `ToJSON` type class.
 
 ## License
 
