@@ -11,28 +11,27 @@ import           Test.Hspec
 data Object = Object
     { name :: Text
     , age  :: Int
-    }
-    deriving (Show, Eq)
+    } deriving (Show, Eq)
 
 
 objectEncoder :: JE.Encoder Object
 objectEncoder = JE.object
-  [ JE.field "name" JE.auto name
-  , JE.field "age" JE.auto age
+  [ JE.field "name" JE.text name
+  , JE.field "age" JE.int age
   ]
 
 
 objectEncoder' :: JE.Encoder Object
 objectEncoder' = JE.object' $ \Object {..} ->
-  [ JE.field' "name" JE.auto name
-  , JE.field' "age" JE.auto age
+  [ JE.field' "name" JE.text name
+  , JE.field' "age" JE.int age
   ]
 
 
 encodePrimitives :: Spec
 encodePrimitives = describe "primitives" $ do
   it "encode bool" $ do
-    JE.encode JE.auto True `shouldBe` "true"
+    JE.encode JE.bool True `shouldBe` "true"
 
 
 objectEncoding :: Spec

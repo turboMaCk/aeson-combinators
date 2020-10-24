@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP        #-}
+{-# LANGUAGE CPP #-}
 
 -- |
 -- Module      : Data.Aeson.Cominators.Encode
@@ -32,17 +32,18 @@ module Data.Aeson.Combinators.Encode (
   , auto
   , run
 -- * Object Encoding
+-- $objects
   , KeyValueEncoder
-  , field
   , object
-  -- * Alternative Object Encoding
+  , field
+-- ** Alternative Object Encoding
   , KeyValueEncoder'
-  , field'
   , object'
--- * Array Encoding
-  , array
-  , vector
+  , field'
+-- * Collections
   , list
+  , vector
+  , jsonArray
 -- * Encoding Primitive Values
 --
 -- *** Void, Unit, Bool
@@ -180,7 +181,7 @@ surroundingEncoder = contramap (\(S person _) -> person) personEncoder
 -}
 
 
-{- |
+{-|
 Value describing encoding of @a@ into a JSON 'Value'.
 This is essentially just a wrapper around function that
 should be applied later.
@@ -217,8 +218,12 @@ pairEncoder2 = contramap fst personEncoder
 
 === Divisible and Decidable
 
+Some of you might know library @covariant@ and ask what is a support for
+other covariant typeclasses.
 It's not possible to define lawful Divisble instance for JSON 'Value'
-and thise by extension it's not possible to define Decidable either.
+and by extension it's not possible to define Decidable either.
+While it is posible to provide somewhat useful unlawful instances for these this
+library opts to not to do that.
 
 -}
 newtype Encoder a = Encoder (a -> Value)
@@ -242,47 +247,96 @@ auto = Encoder Aeson.toJSON
 
 -- Combinators
 
+{- $objects
+There are two alternative ways of defining Object encodings.
+Both provide "eqvivalent" types and functions with consistent naming.
+Variants without and with @'@ suffix are meant to be used together.
+-}
 
+{-| Object Encoder
+
+>>> :{
+  data Object = Object
+    { name :: Text
+    , age  :: Int
+    } deriving (Show, Eq)
+:}
+
+>>> :{
+  objectEncoder :: Encoder Object
+  objectEncoder = object
+    [ field "name" text name
+    , field "age" int age
+    ]
+:}
+
+>>> encode objectEncoder $ Object "Joe" 30
+"{\"age\":30,\"name\":\"Joe\"}"
+
+-}
 type KeyValueEncoder a = a -> Pair
 
 
-field :: Text -> Encoder b -> (a -> b) -> KeyValueEncoder a
-field name (Encoder enc) get v = (name, enc $ get v)
-
-
+{-| Object combinators -}
 object :: [KeyValueEncoder a] -> Encoder a
 object xs = Encoder $ \val -> Aeson.object $ fmap (\f -> f val) xs
 
 
+{-| Define object field -}
+field :: Text -> Encoder b -> (a -> b) -> KeyValueEncoder a
+field name (Encoder enc) get v = (name, enc $ get v)
+
+
+{-| Object Encoder (alternative)
+
+>>> :set -XRecordWildCards
+
+>>> :{
+  data Object = Object
+    { name :: Text
+    , age  :: Int
+    } deriving (Show, Eq)
+:}
+
+>>> :{
+  objectEncoder' :: Encoder Object
+  objectEncoder' = object' $ \Object{..} ->
+    [ field' "name" text name
+    , field' "age" int age
+    ]
+:}
+
+>>> encode objectEncoder' $ Object "Joe" 30
+"{\"age\":30,\"name\":\"Joe\"}"
+-}
 type KeyValueEncoder' a = a -> [Pair]
 
-
-field' :: Text -> Encoder a -> a -> (Text, Value)
-field' name (Encoder enc) val = (name, enc val)
-
-
+{-| Object combinators (alternative) -}
 object' :: KeyValueEncoder' a -> Encoder a
 object' f = Encoder $ \val -> Aeson.object $ f val
 
 
+{-| Define object field (alternative) -}
+field' :: Text -> Encoder a -> a -> (Text, Value)
+field' name (Encoder enc) val = (name, enc val)
+
+
+-- Collections
+
+
+{-| Encode 'Vector' -}
 vector :: Encoder a -> Encoder (Vector a)
 vector (Encoder f) = Encoder $ \val -> Aeson.Array $ f <$> val
 
 
+{-| Encode 'List' -}
 list :: Encoder a -> Encoder [a]
 list (Encoder f) = Encoder $ \val -> Aeson.Array $ fromList $ f <$> val
 
 
-array :: [Encoder a] -> Encoder a
-array xs = Encoder $ \a -> Array $ Vector.fromList $ (\(Encoder f) -> f a) <$> xs
-
-
--- Encode
-
-
-encode :: Encoder a -> a -> BS.ByteString
-encode encoder =
-  E.encodingToLazyByteString . toEncoding encoder
+{-| Encode multiple values as array -}
+jsonArray :: [Encoder a] -> Encoder a
+jsonArray xs = Encoder $ \a -> Array $ Vector.fromList $ (\(Encoder f) -> f a) <$> xs
 
 
 -- Basic Encoders
@@ -485,10 +539,17 @@ dayOfWeek = auto
 #endif
 
 
+-- Encode
 
--- Private
 
+{-| Encode value into (Lazy) @ByteString@
+-}
+encode :: Encoder a -> a -> BS.ByteString
+encode encoder =
+  E.encodingToLazyByteString . toEncoding encoder
 
+{-| Convert value to encoding
+-}
 toEncoding :: Encoder a -> a -> E.Encoding
 toEncoding (Encoder enc) = E.value . enc
 {-# INLINE toEncoding #-}
