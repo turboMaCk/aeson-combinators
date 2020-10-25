@@ -20,9 +20,10 @@ import qualified Data.Aeson.Combinators.Decode as Decode
 
 
 bench :: NFData b => String -> (a -> b) -> (Int -> a) -> [Benchmark]
-bench name f gen = fmap (\i -> let !generated = gen i
-                               in Criterion.bench (name <> " " <> show i) $ (nf f) generated
-                        ) [10,100..1000]
+bench name f gen = fmap (\i -> let !n         = 10 ^ i
+                                   !generated = gen n
+                               in Criterion.bench (name <> " " <> show n) $ (nf f) generated
+                        ) ([1..4] :: [Int])
 {-# INLINE bench #-}
 
 
@@ -33,26 +34,21 @@ main =
         bench "nested" (Decode.decode deeplyNestedDecoder) deeplyNestedValue
     , Criterion.bgroup "Derived (generic) decoder nested" $
         bench "nested" (Aeson.decode @ DeeplyNested) deeplyNestedValue
+    , Criterion.bgroup "Implemented instance decoder nested" $
+        bench "nested" (Aeson.decode @ DeeplyNested') deeplyNestedValue
     , Criterion.bgroup "Combinators decoder narrow" $
         bench "narrow" (Decode.decode narrowDecoder) narrowValue
-    , Criterion.bgroup "Dreived (generic) decoder narrow" $
+    , Criterion.bgroup "Derived (generic) decoder narrow" $
         bench "narrow" (Aeson.decode @ Narrow) narrowValue
+    , Criterion.bgroup "Implemented instance decoder narrow" $
+        bench "narrow" (Aeson.decode @ Narrow') narrowValue
     ]
-
-
--- | Wrapper for implementing alternative instance for Aeson Typeclasses
-newtype Implement a = Implement a
 
 
 data DeeplyNested = DeeplyNested
     { nested :: ![DeeplyNested]
     } deriving stock (Show, Generic)
       deriving anyclass (FromJSON, NFData, ToJSON)
-
-
-instance FromJSON (Implement DeeplyNested) where
-  parseJSON = withObject "DeeplyNested" $ \v ->
-    Implement . DeeplyNested <$> v .: "nested"
 
 
 deeplyNestedDecoder :: Decoder DeeplyNested
@@ -69,15 +65,21 @@ deeplyNestedValue depth = Aeson.encode $ go depth (DeeplyNested [])
       | otherwise = go (n - 1) $ DeeplyNested [dn]
 
 
+data DeeplyNested' = DeeplyNested'
+    { nested' :: ![DeeplyNested']
+    } deriving stock (Show, Generic)
+      deriving anyclass (NFData)
+
+
+instance FromJSON DeeplyNested' where
+  parseJSON = withObject "DeeplyNested'" $ \v ->
+    DeeplyNested' <$> v .: "nested"
+
+
 data Narrow = Narrow
     { narrow :: ![Int]
     } deriving stock (Show, Generic)
       deriving anyclass (FromJSON, NFData, ToJSON)
-
-
-instance FromJSON (Implement Narrow) where
-  parseJSON = withObject "DeeplyNested" $ \v ->
-    Implement . Narrow <$> v .: "narrow"
 
 
 narrowDecoder :: Decoder Narrow
@@ -87,3 +89,14 @@ narrowDecoder = Narrow
 
 narrowValue :: Int -> ByteString
 narrowValue width = Aeson.encode $ Narrow [1..width]
+
+
+data Narrow' = Narrow'
+    { narrow' :: ![Int]
+    } deriving stock (Show, Generic)
+      deriving anyclass (NFData)
+
+
+instance FromJSON Narrow' where
+  parseJSON = withObject "narrow'" $ \v ->
+    Narrow' <$> v .: "narrow"
