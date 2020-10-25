@@ -19,35 +19,24 @@ import qualified Data.Aeson                    as Aeson
 import qualified Data.Aeson.Combinators.Decode as Decode
 
 
-bench :: NFData b => String -> (a -> b) -> [a] -> [Benchmark]
-bench name f =
-  fmap (Criterion.bench name . (nf f))
+bench :: NFData b => String -> (a -> b) -> (Int -> a) -> [Benchmark]
+bench name f gen = fmap (\i -> let !generated = gen i
+                               in Criterion.bench (name <> " " <> show i) $ (nf f) generated
+                        ) [10,100..1000]
 {-# INLINE bench #-}
 
 
 main :: IO ()
 main =
-  let !nestedVal10 = deeplyNestedValue 10
-      !nestedVal100 = deeplyNestedValue 100
-      !nestedVal1000 = deeplyNestedValue 1000
-      !nestedVal10000 = deeplyNestedValue 10000
-      !nested = [ nestedVal10, nestedVal100, nestedVal1000, nestedVal10000 ]
-
-      !narrowVal10 = narrowValue 10
-      !narrowVal100 = narrowValue 100
-      !narrowVal1000 = narrowValue 1000
-      !narrowVal10000 = narrowValue 10000
-      !narrow = [ narrowVal10, narrowVal100, narrowVal1000, narrowVal10000 ]
-  in
   Criterion.defaultMain
     [ Criterion.bgroup "Combinators decoder nested" $
-        bench "nested" (Decode.decode deeplyNestedDecoder) nested
+        bench "nested" (Decode.decode deeplyNestedDecoder) deeplyNestedValue
     , Criterion.bgroup "Derived (generic) decoder nested" $
-        bench "nested" (Aeson.decode @ DeeplyNested) nested
+        bench "nested" (Aeson.decode @ DeeplyNested) deeplyNestedValue
     , Criterion.bgroup "Combinators decoder narrow" $
-        bench "narrow" (Decode.decode narrowDecoder) narrow
+        bench "narrow" (Decode.decode narrowDecoder) narrowValue
     , Criterion.bgroup "Dreived (generic) decoder narrow" $
-        bench "narrow" (Aeson.decode @ Narrow) narrow
+        bench "narrow" (Aeson.decode @ Narrow) narrowValue
     ]
 
 
@@ -67,7 +56,8 @@ instance FromJSON (Implement DeeplyNested) where
 
 
 deeplyNestedDecoder :: Decoder DeeplyNested
-deeplyNestedDecoder = DeeplyNested <$> Decode.key "nested" (Decode.list deeplyNestedDecoder)
+deeplyNestedDecoder = DeeplyNested
+  <$> Decode.key "nested" (Decode.list deeplyNestedDecoder)
 
 
 deeplyNestedValue :: Int -> ByteString
@@ -91,7 +81,8 @@ instance FromJSON (Implement Narrow) where
 
 
 narrowDecoder :: Decoder Narrow
-narrowDecoder = Narrow <$> Decode.key "narrow" (Decode.list Decode.int)
+narrowDecoder = Narrow
+  <$> Decode.key "narrow" (Decode.list Decode.int)
 
 
 narrowValue :: Int -> ByteString
