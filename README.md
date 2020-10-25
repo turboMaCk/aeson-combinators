@@ -16,7 +16,7 @@ describing what this library attempts to solve.
 
 ## Internals
 
-`Decoder a` type is a function `Value -> Parser a` the same as `fromJSON`
+`Decoder a` type is a function `Value -> Parser a` the same as `parseJSON`
 member function of `FromJSON` class. This means there should be near zero overhead.
 Aeson types and functions are reused where possible. Similarly `Encoder a` type
 follow `toJSON` from `ToJSON` type class.

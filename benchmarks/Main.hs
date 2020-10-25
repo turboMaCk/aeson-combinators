@@ -1,68 +1,74 @@
+{-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TypeApplications   #-}
 
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE OverloadedStrings #-}
-import qualified Data.Text as T
-import Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Lazy as LBS
-import Data.Aeson.Types
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.Combinators.Decode as ACD
-import Criterion.Main
-import GHC.Generics (Generic, Generic1)
-import Control.DeepSeq
+import           Control.DeepSeq               (NFData)
+import           Criterion                     (Benchmark, nf)
+import           Data.Aeson.Combinators.Decode (Decoder)
+import           Data.Aeson.Types              (FromJSON, ToJSON, withObject,
+                                                (.:))
+import           Data.ByteString.Lazy          (ByteString)
+import           GHC.Generics                  (Generic)
 
--- Our benchmark harness.
-main = do
+import qualified Criterion.Main                as Criterion
+import qualified Data.Aeson                    as Aeson
+import qualified Data.Aeson.Combinators.Decode as Decode
+
+
+bench :: NFData b => String -> (a -> b) -> [a] -> [Benchmark]
+bench name f =
+  fmap (Criterion.bench name . (nf f))
+{-# INLINE bench #-}
+
+
+main :: IO ()
+main =
   let !nestedVal10 = deeplyNestedValue 10
       !nestedVal100 = deeplyNestedValue 100
       !nestedVal1000 = deeplyNestedValue 1000
       !nestedVal10000 = deeplyNestedValue 10000
+      !nested = [ nestedVal10, nestedVal100, nestedVal1000, nestedVal10000 ]
+
       !narrowVal10 = narrowValue 10
       !narrowVal100 = narrowValue 100
       !narrowVal1000 = narrowValue 1000
       !narrowVal10000 = narrowValue 10000
-  defaultMain [
-    bgroup "ACD decoder nested"
-      [ bench "nested 10"    $ nf (ACD.decode deeplyNestedDecoder) nestedVal10
-      , bench "nested 100"   $ nf (ACD.decode deeplyNestedDecoder) nestedVal100
-      , bench "nested 1000"  $ nf (ACD.decode deeplyNestedDecoder) nestedVal1000
-      , bench "nested 10000" $ nf (ACD.decode deeplyNestedDecoder) nestedVal10000
-      ],
-    bgroup "Aeson decoder"
-      [ bench "nested 10"    $ nf (Aeson.decode :: ByteString -> Maybe DeeplyNested) nestedVal10
-      , bench "nested 100"   $ nf (Aeson.decode :: ByteString -> Maybe DeeplyNested) nestedVal100
-      , bench "nested 1000"  $ nf (Aeson.decode :: ByteString -> Maybe DeeplyNested) nestedVal1000
-      , bench "nested 10000" $ nf (Aeson.decode :: ByteString -> Maybe DeeplyNested) nestedVal10000
-      ],
-    bgroup "ACD decoder narrow"
-      [ bench "narrow 10"    $ nf (ACD.decode narrowDecoder) narrowVal10
-      , bench "narrow 100"   $ nf (ACD.decode narrowDecoder) narrowVal100
-      , bench "narrow 1000"  $ nf (ACD.decode narrowDecoder) narrowVal1000
-      , bench "narrow 10000" $ nf (ACD.decode narrowDecoder) narrowVal10000
-      ],
-    bgroup "Aeson decoder"
-      [ bench "narrow 10"    $ nf (Aeson.decode :: ByteString -> Maybe Narrow) narrowVal10
-      , bench "narrow 100"   $ nf (Aeson.decode :: ByteString -> Maybe Narrow) narrowVal100
-      , bench "narrow 1000"  $ nf (Aeson.decode :: ByteString -> Maybe Narrow) narrowVal1000
-      , bench "narrow 10000" $ nf (Aeson.decode :: ByteString -> Maybe Narrow) narrowVal10000
-      ]
+      !narrow = [ narrowVal10, narrowVal100, narrowVal1000, narrowVal10000 ]
+  in
+  Criterion.defaultMain
+    [ Criterion.bgroup "Combinators decoder nested" $
+        bench "nested" (Decode.decode deeplyNestedDecoder) nested
+    , Criterion.bgroup "Derived (generic) decoder nested" $
+        bench "nested" (Aeson.decode @ DeeplyNested) nested
+    , Criterion.bgroup "Combinators decoder narrow" $
+        bench "narrow" (Decode.decode narrowDecoder) narrow
+    , Criterion.bgroup "Dreived (generic) decoder narrow" $
+        bench "narrow" (Aeson.decode @ Narrow) narrow
     ]
 
+
+-- | Wrapper for implementing alternative instance for Aeson Typeclasses
+newtype Implement a = Implement a
+
+
 data DeeplyNested = DeeplyNested
-    { nested :: [DeeplyNested]
-    }
-    deriving (Show, Generic)
+    { nested :: ![DeeplyNested]
+    } deriving stock (Show, Generic)
+      deriving anyclass (FromJSON, NFData, ToJSON)
 
-instance NFData DeeplyNested
 
-instance ToJSON DeeplyNested where
-    toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+instance FromJSON (Implement DeeplyNested) where
+  parseJSON = withObject "DeeplyNested" $ \v ->
+    Implement . DeeplyNested <$> v .: "nested"
 
-instance FromJSON DeeplyNested
 
-deeplyNestedDecoder :: ACD.Decoder DeeplyNested
-deeplyNestedDecoder = DeeplyNested <$> (ACD.key "nested" $ ACD.list deeplyNestedDecoder)
+deeplyNestedDecoder :: Decoder DeeplyNested
+deeplyNestedDecoder = DeeplyNested <$> Decode.key "nested" (Decode.list deeplyNestedDecoder)
+
 
 deeplyNestedValue :: Int -> ByteString
 deeplyNestedValue depth = Aeson.encode $ go depth (DeeplyNested [])
@@ -70,22 +76,23 @@ deeplyNestedValue depth = Aeson.encode $ go depth (DeeplyNested [])
     go :: Int -> DeeplyNested -> DeeplyNested
     go n dn
       | n <= 0 = dn
-      | otherwise = go (n - 1) (DeeplyNested [dn])
+      | otherwise = go (n - 1) $ DeeplyNested [dn]
+
 
 data Narrow = Narrow
-    { narrow :: [Int]
-    }
-    deriving (Show, Generic)
+    { narrow :: ![Int]
+    } deriving stock (Show, Generic)
+      deriving anyclass (FromJSON, NFData, ToJSON)
 
-instance NFData Narrow
 
-instance ToJSON Narrow where
-    toEncoding = Aeson.genericToEncoding Aeson.defaultOptions
+instance FromJSON (Implement Narrow) where
+  parseJSON = withObject "DeeplyNested" $ \v ->
+    Implement . Narrow <$> v .: "narrow"
 
-instance FromJSON Narrow
 
-narrowDecoder :: ACD.Decoder Narrow
-narrowDecoder = Narrow <$> (ACD.key "narrow" $ ACD.list ACD.int)
+narrowDecoder :: Decoder Narrow
+narrowDecoder = Narrow <$> Decode.key "narrow" (Decode.list Decode.int)
+
 
 narrowValue :: Int -> ByteString
 narrowValue width = Aeson.encode $ Narrow [1..width]
