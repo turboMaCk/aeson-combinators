@@ -4,7 +4,7 @@ let
       haskellPackages =
         pkgs.haskellPackages.override {
             overrides = self: super: {
-              aeson-combinators = self.callCabal2nix "aeson-combinators" ./. {};
+              aeson-combinators = pkgs.haskell.lib.doBenchmark (self.callCabal2nix "aeson-combinators" ./. {});
             };
         };
     };
