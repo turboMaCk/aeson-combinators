@@ -1,5 +1,9 @@
 # Revision history for aeson-combinators
 
+## 0.0.4.1 -- 2021-02-14
+* Cleanup README
+* CI maintanance & GHC compatibility update
+
 ## 0.0.4.0 -- 2020-10-24
 * `Encode` module for encoding
 
