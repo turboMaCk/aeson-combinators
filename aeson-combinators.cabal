@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                aeson-combinators
-version:             0.0.4.0
+version:             0.0.4.1
 synopsis:            Aeson combinators for dead simple JSON decoding
 description:
     Low overhead value space `Decoder`
