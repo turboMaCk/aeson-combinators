@@ -31,6 +31,32 @@ jobs:
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc865
 
+  ghc883:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: cachix/install-nix-action@v12
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v8
+        with:
+          name: aeson-combinators
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - run: nix-build -A ghc883
+
+  ghc884:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: cachix/install-nix-action@v12
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v8
+        with:
+          name: aeson-combinators
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+      - run: nix-build -A ghc884
+
   ghc8101:
     runs-on: ubuntu-latest
     steps:
@@ -44,18 +70,6 @@ jobs:
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc8101
 
-  ghc883:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: cachix/install-nix-action@v12
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
-      - uses: cachix/cachix-action@v8
-        with:
-          name: aeson-combinators
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - run: nix-build -A ghc883
 
   ghcjs:
     runs-on: ubuntu-latest

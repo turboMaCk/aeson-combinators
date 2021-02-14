@@ -21,7 +21,9 @@ homepage:            https://github.com/turboMaCk/aeson-combinators
 tested-with:         GHC == 8.4.4
                    , GHC == 8.6.5
                    , GHC == 8.8.3
+                   , GHC == 8.8.4
                    , GHC == 8.10.1
+                   , GHC == 8.10.3
                    , GHCJS == 8.6.0.1
 
 Flag doctest
@@ -93,7 +95,6 @@ test-suite doctest
     else
         build-depends:    base
                         , doctest
-
 
 source-repository head
   type:              git
