@@ -9,9 +9,6 @@ on top of Aeson's Parser for combinator style decoding.
 
 This library is compatible with GHC as well as recent versions of **GHCJS**.
 
-I wrote a [blob post](https://turbomack.github.io/posts/2020-02-21-value-space-decoding-for-aeson.html)
-describing what this library attempts to solve.
-
 ## Performance
 
 `Decoder a` type is a function `Value -> Parser a` the same as `parseJSON`
