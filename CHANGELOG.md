@@ -1,5 +1,8 @@
 # Revision history for aeson-combinators
 
+## 0.0.5.0 -- 2021-03-13
+* make test suite compatible with hashable 1.3.1.0
+
 ## 0.0.4.1 -- 2021-02-14
 * Cleanup README
 * CI maintanance & GHC compatibility update

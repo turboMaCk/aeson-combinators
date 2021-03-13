@@ -37,14 +37,19 @@ encodePrimitives = describe "primitives" $ do
 objectEncoding :: Spec
 objectEncoding = do
   let object = Object "Joe" 30
-  let json = "{\"age\":30,\"name\":\"Joe\"}"
+
+  -- poor man's workaround for key ordering
+  -- see: https://github.com/haskell/aeson/issues/837
+  let json res =
+          res == "{\"age\":30,\"name\":\"Joe\"}"
+                  || res == "{\"name\":\"Joe\",\"age\":30}"
 
   describe "object encoding" $ do
     it "should encode using getter style encoding" $ do
-      JE.encode objectEncoder object `shouldBe` json
+      JE.encode objectEncoder object `shouldSatisfy` json
 
     it "should encode using explicit style encoding" $ do
-      JE.encode objectEncoder' object `shouldBe` json
+      JE.encode objectEncoder' object `shouldSatisfy` json
 
 
 listSpec :: Spec
