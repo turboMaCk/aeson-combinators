@@ -2,7 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 
 -- |
--- Module      : Data.Aeson.Cominators.Decode
+-- Module      : Data.Aeson.Combinators.Decode
 -- Copyright   : (c) Marek Fajkus
 -- License     : BSD3
 --
@@ -88,7 +88,6 @@ module Data.Aeson.Combinators.Decode (
 -- * Parsing (Running Decoders)
   , parseMaybe
   , parseEither
-  -- * Re-expose aeson internals we depend on
   , module Data.Aeson.Combinators.Compat
   ) where
 

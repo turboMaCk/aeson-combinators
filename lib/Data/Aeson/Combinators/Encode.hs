@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 
 -- |
--- Module      : Data.Aeson.Cominators.Encode
+-- Module      : Data.Aeson.Combinators.Encode
 -- Copyright   : (c) Marek Fajkus
 -- License     : BSD3
 --
@@ -21,7 +21,7 @@ module Data.Aeson.Combinators.Encode (
 -- * Importing
 -- $importing
 
--- * Aleternative to using 'Encode' Combinators
+-- * Alternative to using 'Encode' Combinators
 -- $alternative
 
 -- * Example Usage
@@ -71,7 +71,6 @@ module Data.Aeson.Combinators.Encode (
   -- * Evaluating Encoders
   , encode
   , toEncoding
-  -- * Re-expose aeson internals we depend on
   , module Data.Aeson.Combinators.Compat
 ) where
 
