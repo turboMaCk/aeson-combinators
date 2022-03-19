@@ -32,8 +32,8 @@ module Data.Aeson.Combinators.Decode (
   , nullable
 -- *** Sequences
   , list, vector
--- *** Hashmap
-  , hashMapLazy, hashMapStrict
+-- *** Hashmap and Map
+  , hashMapLazy, hashMapStrict, keyMap
 -- *** Map
   , mapLazy, mapStrict
 -- * Combinators
@@ -88,6 +88,8 @@ module Data.Aeson.Combinators.Decode (
 -- * Parsing (Running Decoders)
   , parseMaybe
   , parseEither
+  -- * Re-expose aeson internals we depend on
+  , module Data.Aeson.Combinators.Compat
   ) where
 
 import           Prelude                    hiding (either, fail, maybe)
@@ -98,6 +100,7 @@ import           Control.Monad              hiding (void)
 import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
 
+import           Data.Aeson.Combinators.Compat
 import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
 import qualified Data.Aeson.Internal        as AI
 import qualified Data.Aeson.Parser          as Parser
@@ -346,7 +349,7 @@ vector (Decoder d) = Decoder $ \case
 -- using provided 'Decoder'.
 hashMapLazy :: Decoder a -> Decoder (HL.HashMap Text a)
 hashMapLazy (Decoder d) = Decoder $ \case
-  Object xs -> traverse d xs
+  Object xs -> toHashMapText <$> traverse d xs
   val       -> typeMismatch "Array" val
 {-# INLINE hashMapLazy #-}
 
@@ -355,10 +358,17 @@ hashMapLazy (Decoder d) = Decoder $ \case
 -- using provided 'Decoder'.
 hashMapStrict :: Decoder a -> Decoder (HS.HashMap Text a)
 hashMapStrict (Decoder d) = Decoder $ \case
-  Object xs -> traverse d xs
+  Object xs -> toHashMapText <$> traverse d xs
   val       -> typeMismatch "Array" val
 {-# INLINE hashMapStrict #-}
 
+-- | Decode JSON object to 'KeyMap' with 'Key' key
+-- using provided 'Decoder'.
+keyMap :: Decoder a -> Decoder (KeyMap a)
+keyMap (Decoder d) = Decoder $ \case
+  Object xs -> traverse d xs
+  val       -> typeMismatch "Array" val
+{-# INLINE keyMap #-}
 
 -- | Decode JSON object to 'ML.Map' with 'Data.Text' key
 -- using provided 'Decoder'.
@@ -399,7 +409,7 @@ jsonNull a = Decoder $ \case
 --
 -- >>> decode (key "data" int) "{\"data\": 42}"
 -- Just 42
-key :: Text -> Decoder a -> Decoder a
+key :: Key -> Decoder a -> Decoder a
 key t (Decoder d) = Decoder $ \case
   Object v -> d =<< v .: t
   val      -> typeMismatch "Object" val
@@ -410,7 +420,7 @@ key t (Decoder d) = Decoder $ \case
 --
 -- >>> decode (at ["data", "value"] int) "{\"data\": {\"value\": 42}}"
 -- Just 42
-at :: [Text] -> Decoder a -> Decoder a
+at :: [Key] -> Decoder a -> Decoder a
 at pth d = foldr key d pth
 {-# INLINE at #-}
 
