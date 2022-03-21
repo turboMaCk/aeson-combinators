@@ -31,7 +31,7 @@ jobs:
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc884
 
-  ghc8101:
+  ghc8107:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
@@ -42,7 +42,7 @@ jobs:
         with:
           name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - run: nix-build -A ghc8101
+      - run: nix-build -A ghc8107
 
   ghc902:
     runs-on: ubuntu-latest

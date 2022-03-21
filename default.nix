@@ -22,7 +22,7 @@ in with pkgs; {
   ghc = haskellPackages.aeson-combinators;
   ghcjs = ghcjs.pkgs.haskell.packages.ghcjs.callCabal2nix "aeson-combinators" ./. {};
   ghc884 = haskell.packages.ghc884.aeson-combinators;
-  ghc8101 = haskell.packages.ghc8101.aeson-combinators;
+  ghc8107 = haskell.packages.ghc8107.aeson-combinators;
   ghc902 = haskell.packages.ghc902.aeson-combinators;
   ghc921 = haskell.packages.ghc921.aeson-combinators;
 }
