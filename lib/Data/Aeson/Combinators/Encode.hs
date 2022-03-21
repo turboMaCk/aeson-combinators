@@ -1,7 +1,7 @@
 {-# LANGUAGE CPP #-}
 
 -- |
--- Module      : Data.Aeson.Cominators.Encode
+-- Module      : Data.Aeson.Combinators.Encode
 -- Copyright   : (c) Marek Fajkus
 -- License     : BSD3
 --
@@ -21,7 +21,7 @@ module Data.Aeson.Combinators.Encode (
 -- * Importing
 -- $importing
 
--- * Aleternative to using 'Encode' Combinators
+-- * Alternative to using 'Encode' Combinators
 -- $alternative
 
 -- * Example Usage
@@ -71,6 +71,7 @@ module Data.Aeson.Combinators.Encode (
   -- * Evaluating Encoders
   , encode
   , toEncoding
+  , module Data.Aeson.Combinators.Compat
 ) where
 
 import           Control.Applicative
@@ -79,6 +80,7 @@ import           Data.Functor.Contravariant
 
 import           Data.Aeson                 (ToJSON, Value (..))
 import qualified Data.Aeson                 as Aeson
+import           Data.Aeson.Combinators.Compat
 import qualified Data.Aeson.Encoding        as E
 import           Data.Aeson.Types           (Pair)
 import qualified Data.ByteString.Lazy       as BS
@@ -285,7 +287,7 @@ object xs = Encoder $ \val -> Aeson.object $ fmap (\f -> f val) xs
 
 
 {-| Define object field -}
-field :: Text -> Encoder b -> (a -> b) -> KeyValueEncoder a
+field :: Key -> Encoder b -> (a -> b) -> KeyValueEncoder a
 field name (Encoder enc) get v = (name, enc $ get v)
 {-# INLINE field #-}
 
@@ -322,7 +324,7 @@ object' f = Encoder $ \val -> Aeson.object $ f val
 
 
 {-| Define object field (alternative) -}
-field' :: Text -> Encoder a -> a -> (Text, Value)
+field' :: Key -> Encoder a -> a -> (Key, Value)
 field' name (Encoder enc) val = (name, enc val)
 {-# INLINE field' #-}
 
