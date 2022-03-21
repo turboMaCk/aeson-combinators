@@ -18,7 +18,7 @@ jobs:
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc
 
-  ghc865:
+  ghc884:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
@@ -31,7 +31,7 @@ jobs:
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc884
 
-  ghc883:
+  ghc8101:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
@@ -44,7 +44,7 @@ jobs:
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc8101
 
-  ghc884:
+  ghc902:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
@@ -57,7 +57,7 @@ jobs:
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
       - run: nix-build -A ghc902
 
-  ghc8101:
+  ghc921:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
