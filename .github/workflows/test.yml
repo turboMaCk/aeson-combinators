@@ -29,7 +29,7 @@ jobs:
         with:
           name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - run: nix-build -A ghc865
+      - run: nix-build -A ghc884
 
   ghc883:
     runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
         with:
           name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - run: nix-build -A ghc883
+      - run: nix-build -A ghc8101
 
   ghc884:
     runs-on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
         with:
           name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - run: nix-build -A ghc884
+      - run: nix-build -A ghc902
 
   ghc8101:
     runs-on: ubuntu-latest
@@ -68,8 +68,7 @@ jobs:
         with:
           name: aeson-combinators
           signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-      - run: nix-build -A ghc8101
-
+      - run: nix-build -A ghc921
 
   ghcjs:
     runs-on: ubuntu-latest
