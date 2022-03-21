@@ -1,2 +1,2 @@
 with (import ./default.nix);
-ghc.env
+ghc921.env
