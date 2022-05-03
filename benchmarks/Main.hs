@@ -33,15 +33,15 @@ main =
     [ Criterion.bgroup "Combinators decoder nested" $
         bench "nested" (Decode.decode deeplyNestedDecoder) deeplyNestedValue
     , Criterion.bgroup "Derived (generic) decoder nested" $
-        bench "nested" (Aeson.decode @ DeeplyNested) deeplyNestedValue
+        bench "nested" (Aeson.decode @DeeplyNested) deeplyNestedValue
     , Criterion.bgroup "Implemented instance decoder nested" $
-        bench "nested" (Aeson.decode @ DeeplyNested') deeplyNestedValue
+        bench "nested" (Aeson.decode @DeeplyNested') deeplyNestedValue
     , Criterion.bgroup "Combinators decoder narrow" $
         bench "narrow" (Decode.decode narrowDecoder) narrowValue
     , Criterion.bgroup "Derived (generic) decoder narrow" $
-        bench "narrow" (Aeson.decode @ Narrow) narrowValue
+        bench "narrow" (Aeson.decode @Narrow) narrowValue
     , Criterion.bgroup "Implemented instance decoder narrow" $
-        bench "narrow" (Aeson.decode @ Narrow') narrowValue
+        bench "narrow" (Aeson.decode @Narrow') narrowValue
     ]
 
 
