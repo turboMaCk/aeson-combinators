@@ -1,5 +1,11 @@
 # Revision history for aeson-combinators
 
+## 0.1.0.1 -- 2022-05-03
+* fix benchmark compatibility with ghc 9.2.2
+
+## 0.1.0.0 -- 2022-03-21
+* Aeson 2 compatibility
+
 ## 0.0.5.0 -- 2021-03-13
 * make test suite compatible with hashable 1.3.1.0
 
