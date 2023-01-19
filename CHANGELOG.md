@@ -1,5 +1,8 @@
 # Revision history for aeson-combinators
 
+## Unreleased
+* `fromDecoder` utility to unwrap a `Decoder`'s function
+
 ## 0.1.0.1 -- 2022-05-03
 * fix benchmark compatibility with ghc 9.2.2
 
