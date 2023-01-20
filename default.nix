@@ -24,5 +24,5 @@ in with pkgs; {
   ghc884 = haskell.packages.ghc884.aeson-combinators;
   ghc8107 = haskell.packages.ghc8107.aeson-combinators;
   ghc902 = haskell.packages.ghc902.aeson-combinators;
-  ghc922 = haskell.packages.ghc922.aeson-combinators;
+  ghc925 = haskell.packages.ghc925.aeson-combinators;
 }
