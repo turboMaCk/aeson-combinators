@@ -27,6 +27,7 @@ module Data.Aeson.Combinators.Decode (
   -- $applicative
     Decoder(..)
   , auto
+  , fromDecoder
 -- * Decoding Containers
 -- *** Maybe
   , nullable
@@ -301,6 +302,17 @@ instance Alternative Decoder where
 instance MonadFail Decoder where
   fail s = Decoder $ \_ -> Fail.fail s
   {-# INLINE fail #-}
+
+
+-- | Conversely, an Aeson's 'FromJSON' instance can be implemented by using 'Decoder' combinators.
+--
+-- > newtype People = People [Person]
+-- >
+-- > instance FromJSON People where
+-- >     parseJSON = fromDecoder $ Decode.list personDecoder
+fromDecoder :: Decoder a -> Value -> Parser a
+fromDecoder (Decoder f) = f
+{-# INLINE fromDecoder #-}
 
 
 -- | 'Decoder' is compatible with Aeson's 'FromJSON' class.
