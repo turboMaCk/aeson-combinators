@@ -41,6 +41,7 @@ module Data.Aeson.Combinators.Decode (
   , jsonNull
 -- *** Objects
   , key
+  , maybeKey
   , at
 -- *** Arrays
   , index
@@ -425,6 +426,22 @@ key t (Decoder d) = Decoder $ \case
   Object v -> d =<< v .: t
   val      -> typeMismatch "Object" val
 {-# INLINE key #-}
+
+-- | Same as 'key' but works with omitted attributes in payloads and produces parsed values in the context of 'Maybe'.
+--   Note that this combinator behaves differently to a combination of 'maybe' and 'key', which produce error if
+--   the attribute is missing from the json object.
+-- >>> decode (maybeKey "data" int) "{}"
+-- Just Nothing
+--
+--- >>> decode (maybeKey "data" int) "{\"data\": 42}"
+-- Just (Just 42)
+maybeKey :: ACD.Key -> ACD.Decoder a -> ACD.Decoder (Maybe a)
+maybeKey t (ACD.Decoder d) = ACD.Decoder $ \case
+  AT.Object v -> p >>= maybe (pure Nothing) (fmap Just . d)
+    where
+        p = v .:? t
+  val      -> AT.typeMismatch "Object" val
+{-# INLINE maybeKey #-}
 
 
 -- | Extract JSON value from JSON object keys
