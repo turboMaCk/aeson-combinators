@@ -435,12 +435,10 @@ key t (Decoder d) = Decoder $ \case
 --
 --- >>> decode (maybeKey "data" int) "{\"data\": 42}"
 -- Just (Just 42)
-maybeKey :: ACD.Key -> ACD.Decoder a -> ACD.Decoder (Maybe a)
-maybeKey t (ACD.Decoder d) = ACD.Decoder $ \case
-  AT.Object v -> p >>= maybe (pure Nothing) (fmap Just . d)
-    where
-        p = v .:? t
-  val      -> AT.typeMismatch "Object" val
+maybeKey :: Key -> Decoder a -> Decoder (Maybe a)
+maybeKey t (Decoder d) = Decoder $ \case
+  Object v -> (v .:? t) >>= maybe (pure Nothing) (fmap Just . d)
+  val      -> typeMismatch "Object" val
 {-# INLINE maybeKey #-}
 
 
