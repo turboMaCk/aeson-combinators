@@ -1,7 +1,8 @@
 # Revision history for aeson-combinators
 
-## Unreleased
+## 0.1.1.0 -- 2023-09-03
 * `fromDecoder` utility to unwrap a `Decoder`'s function
+* `maybeKey` combinator
 
 ## 0.1.0.1 -- 2022-05-03
 * fix benchmark compatibility with ghc 9.2.2
