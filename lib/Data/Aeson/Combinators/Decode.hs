@@ -94,7 +94,7 @@ module Data.Aeson.Combinators.Decode (
   ) where
 
 import           Prelude                    hiding (either, fail, maybe)
-import qualified Prelude                    (either)
+import qualified Prelude                    (either, maybe)
 
 import           Control.Applicative
 import           Control.Monad              hiding (void)
@@ -437,7 +437,7 @@ key t (Decoder d) = Decoder $ \case
 -- Just (Just 42)
 maybeKey :: Key -> Decoder a -> Decoder (Maybe a)
 maybeKey t (Decoder d) = Decoder $ \case
-  Object v -> (v .:? t) >>= maybe (pure Nothing) (fmap Just . d)
+  Object v -> (v .:? t) >>= Prelude.maybe (pure Nothing) (fmap Just . d)
   val      -> typeMismatch "Object" val
 {-# INLINE maybeKey #-}
 
