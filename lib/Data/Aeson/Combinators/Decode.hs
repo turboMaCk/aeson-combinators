@@ -105,14 +105,10 @@ import           Data.Aeson.Combinators.Compat
 
 #if !(MIN_VERSION_aeson(2,2,0))
 import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
-#else
-import           Data.Aeson.Types           (JSONPath, JSONPathElement (..))
-#endif
-#if !(MIN_VERSION_aeson(2,2,0))
 import           Data.Aeson.Internal        (formatError, iparse)
 #else
+import           Data.Aeson.Types           (JSONPath, JSONPathElement (..))
 import          Data.Aeson.Types            (formatError, iparse)
-#endif
 #if !(MIN_VERSION_aeson(2,2,0))
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
