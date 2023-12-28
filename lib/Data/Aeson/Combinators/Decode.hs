@@ -102,10 +102,21 @@ import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
 
 import           Data.Aeson.Combinators.Compat
+
+#if !(MIN_VERSION_aeson(2,2,0))
 import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
-import qualified Data.Aeson.Internal        as AI
+#else
+import           Data.Aeson.Types           (JSONPath, JSONPathElement (..))
+#endif
+#if !(MIN_VERSION_aeson(2,2,0))
+import           Data.Aeson.Internal        (formatError, iparse)
+#else
+import          Data.Aeson.Types            (formatError, iparse)
+#endif
+#if !(MIN_VERSION_aeson(2,2,0))
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
+#endif
 import           Data.Aeson.Types           hiding (parseEither, parseMaybe)
 import qualified Data.Aeson.Types           as ATypes
 
@@ -797,14 +808,14 @@ decode' (Decoder d) =
 -- | Like 'decode' but returns an error message when decoding fails.
 eitherDecode :: Decoder a -> LB.ByteString -> Either String a
 eitherDecode (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (iparse d)
 {-# INLINE eitherDecode #-}
 
 
 -- | Like 'decode'' but returns an error message when decoding fails.
 eitherDecode' :: Decoder a -> LB.ByteString -> Either String a
 eitherDecode' (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (iparse d)
 {-# INLINE eitherDecode' #-}
 
 
@@ -844,14 +855,14 @@ decodeStrict' (Decoder d) =
 -- | Like 'decodeStrict' but returns an error message when decoding fails.
 eitherDecodeStrict :: Decoder a -> B.ByteString -> Either String a
 eitherDecodeStrict (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF (iparse d)
 {-# INLINE eitherDecodeStrict #-}
 
 
 -- | Like 'decodeStrict'' but returns an error message when decoding fails.
 eitherDecodeStrict' :: Decoder a -> B.ByteString -> Either String a
 eitherDecodeStrict' (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (iparse d)
 {-# INLINE eitherDecodeStrict' #-}
 
 
@@ -923,7 +934,7 @@ parseEither (Decoder f) = ATypes.parseEither f
 
 
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
-eitherFormatError = Prelude.either (Left . uncurry AI.formatError) Right
+eitherFormatError = Prelude.either (Left . uncurry formatError) Right
 {-# INLINE eitherFormatError #-}
 
 
