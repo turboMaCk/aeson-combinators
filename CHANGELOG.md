@@ -1,5 +1,8 @@
 # Revision history for aeson-combinators
 
+## 0.1.1.0 -- 2023-12-28
+* Aeson 2.2.x compatibility
+
 ## 0.1.1.0 -- 2023-09-03
 * `fromDecoder` utility to unwrap a `Decoder`'s function
 * `maybeKey` combinator
