@@ -109,11 +109,10 @@ import           Data.Aeson.Internal        (formatError, iparse)
 #endif
 #if MIN_VERSION_aeson(2,2,0)
 import           Data.Aeson.Types           (JSONPath, JSONPathElement (..))
-import           Data.Aeson.Types            (formatError, iparse)
-#if !(MIN_VERSION_aeson(2,2,0))
+import           Data.Aeson.Types           (formatError, iparse)
+#endif
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
-#endif
 import           Data.Aeson.Types           hiding (parseEither, parseMaybe)
 import qualified Data.Aeson.Types           as ATypes
 
