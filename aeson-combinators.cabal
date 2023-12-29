@@ -49,7 +49,7 @@ library
                      , void
                      , scientific
 
-  if impl(ghc >= 9.8.0)
+  if impl(ghc >= 9.2.0)
       build-depends:
           attoparsec-aeson
   hs-source-dirs:      lib
