@@ -1,6 +1,6 @@
 cabal-version:       >=1.10
 name:                aeson-combinators
-version:             0.1.2.0
+version:             0.1.2.1
 synopsis:            Aeson combinators for dead simple JSON decoding
 description:
     Low overhead value space `Decoder`
@@ -49,7 +49,7 @@ library
                      , void
                      , scientific
 
-  if impl(ghc >= 9.8.0)
+  if impl(ghc >= 9.2.0)
       build-depends:
           attoparsec-aeson
   hs-source-dirs:      lib
