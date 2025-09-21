@@ -1,9 +1,12 @@
 # Revision history for aeson-combinators
 
-## 0.1.1.0 -- 2023-12-29
+## 0.1.2.2 -- 2025-09-21
+* Test suite compatibility with text-2.1.2
+
+## 0.1.2.1 -- 2023-12-29
 * lower bound for aeson-parser dependecy to fix build of documentation in hackage
 
-## 0.1.1.0 -- 2023-12-28
+## 0.1.2.0 -- 2023-12-28
 * Aeson 2.2.x compatibility
 
 ## 0.1.1.0 -- 2023-09-03

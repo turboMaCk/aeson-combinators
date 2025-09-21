@@ -1,15 +1,12 @@
 let
-  config = {
-    packageOverrides = pkgs: rec {
-      haskellPackages =
-        pkgs.haskellPackages.override {
-            overrides = self: super: {
-              aeson-combinators = pkgs.haskell.lib.doBenchmark (self.callCabal2nix "aeson-combinators" ./. {});
-            };
-        };
-    };
-  };
-  pkgs = import <nixpkgs> { inherit config; };
+  pkgs = import <nixpkgs> {};
+
+  build = compiler:
+    (pkgs.haskell.packages."${compiler}".override {
+      overrides = self: super: {
+        aeson-combinators = pkgs.haskell.lib.doBenchmark (self.callCabal2nix "aeson-combinators" ./. {});
+      };
+    }).aeson-combinators;
 
   # Using miso's ghcjs
   # cachix use miso-haskell
@@ -18,10 +15,11 @@ let
     url = "https://github.com/dmjio/miso/archive/843bdc3.tar.gz";
     sha256 = "sha256:1fc15jza8i6xz9b32jphi3yb8mfbdb3nd9m1wmzr68saqizbfdc0";
   }) {};
-in with pkgs; {
-  ghc = haskellPackages.aeson-combinators;
+in {
+  ghc810 = build "ghc810";
+  ghc94 = build "ghc94";
+  ghc96 = build "ghc96";
+  ghc98 = build "ghc98";
+  ghc910 = build "ghc910";
   ghcjs = ghcjs.pkgs.haskell.packages.ghcjs.callCabal2nix "aeson-combinators" ./. {};
-  ghc8107 = haskell.packages.ghc8107.aeson-combinators;
-  ghc902 = haskell.packages.ghc902.aeson-combinators;
-  ghc925 = haskell.packages.ghc925.aeson-combinators;
 }
