@@ -16,6 +16,9 @@ let
     sha256 = "sha256:1fc15jza8i6xz9b32jphi3yb8mfbdb3nd9m1wmzr68saqizbfdc0";
   }) {};
 in {
+  ghc810 = build "ghc810";
+  ghc902 = build "ghc902";
+  ghc902 = build "ghc928";
   ghc94 = build "ghc94";
   ghc96 = build "ghc96";
   ghc98 = build "ghc98";
