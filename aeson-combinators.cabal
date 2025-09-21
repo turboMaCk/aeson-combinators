@@ -62,7 +62,7 @@ benchmark benchmark
     type:              exitcode-stdio-1.0
     main-is:           Main.hs
     hs-source-dirs:    benchmarks
-    build-depends:     base
+    build-depends:     base >= 4 && < 5
                      , aeson
                      , aeson-combinators
                      , bytestring
@@ -78,7 +78,7 @@ test-suite spec
     main-is:           Spec.hs
     other-modules:     JSONDecodeSpec
                      , JSONEncodeSpec
-    build-depends:     base
+    build-depends:     base >= 4 && < 5
                      , hspec
                      , aeson-combinators
                      , bytestring
@@ -97,7 +97,7 @@ test-suite doctest
     if !flag(doctest)
         buildable: False
     else
-        build-depends:    base
+        build-depends:    base >= 4 && < 5
                         , doctest
 
 source-repository head
