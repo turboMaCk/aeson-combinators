@@ -10,7 +10,7 @@ import qualified Data.Aeson.Combinators.Decode as JD
 import Data.Aeson.Types (FromJSON (..))
 import Data.ByteString.Lazy
 import Data.ByteString.Lazy.UTF8 (fromString)
-import Data.Text hiding (show)
+import Data.Text (Text)
 import GHC.Generics
 import Test.Hspec
 
