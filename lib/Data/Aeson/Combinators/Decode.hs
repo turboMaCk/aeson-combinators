@@ -155,7 +155,7 @@ import           Data.Traversable           (traverse)
 -- >>> :set -XOverloadedStrings
 -- >>> :set -XDeriveGeneric
 --
--- > import Data.Text
+-- > import Data.Text (Text)
 -- > import Data.ByteString.Lazy (ByteString)
 -- > import Data.Aeson.Types
 -- > import qualified Data.Aeson.Combinators.Decode as ACD
@@ -199,7 +199,7 @@ import           Data.Traversable           (traverse)
 --
 -- If you like elm style decoding you can avoid using 'FromJSON' type class altogher.
 --
--- > import Data.Text
+-- > import Data.Text (Text)
 -- > import qualified Data.Aeson.Combinators.Decode as ACD
 -- >
 -- > data Person = Person
