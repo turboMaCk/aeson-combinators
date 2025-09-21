@@ -27,6 +27,7 @@ module Data.Aeson.Combinators.Decode (
   -- $applicative
     Decoder(..)
   , auto
+  , fromDecoder
 -- * Decoding Containers
 -- *** Maybe
   , nullable
@@ -40,6 +41,7 @@ module Data.Aeson.Combinators.Decode (
   , jsonNull
 -- *** Objects
   , key
+  , maybeKey
   , at
 -- *** Arrays
   , index
@@ -92,7 +94,7 @@ module Data.Aeson.Combinators.Decode (
   ) where
 
 import           Prelude                    hiding (either, fail, maybe)
-import qualified Prelude                    (either)
+import qualified Prelude                    (either, maybe)
 
 import           Control.Applicative
 import           Control.Monad              hiding (void)
@@ -100,8 +102,15 @@ import           Control.Monad.Fail         (MonadFail (..))
 import qualified Control.Monad.Fail         as Fail
 
 import           Data.Aeson.Combinators.Compat
+
+#if !(MIN_VERSION_aeson(2,2,0))
 import           Data.Aeson.Internal        (JSONPath, JSONPathElement (..))
-import qualified Data.Aeson.Internal        as AI
+import           Data.Aeson.Internal        (formatError, iparse)
+#endif
+#if MIN_VERSION_aeson(2,2,0)
+import           Data.Aeson.Types           (JSONPath, JSONPathElement (..))
+import           Data.Aeson.Types           (formatError, iparse)
+#endif
 import qualified Data.Aeson.Parser          as Parser
 import qualified Data.Aeson.Parser.Internal as ParserI
 import           Data.Aeson.Types           hiding (parseEither, parseMaybe)
@@ -303,6 +312,17 @@ instance MonadFail Decoder where
   {-# INLINE fail #-}
 
 
+-- | Conversely, an Aeson's 'FromJSON' instance can be implemented by using 'Decoder' combinators.
+--
+-- > newtype People = People [Person]
+-- >
+-- > instance FromJSON People where
+-- >     parseJSON = fromDecoder $ Decode.list personDecoder
+fromDecoder :: Decoder a -> Value -> Parser a
+fromDecoder (Decoder f) = f
+{-# INLINE fromDecoder #-}
+
+
 -- | 'Decoder' is compatible with Aeson's 'FromJSON' class.
 -- 'auto' decoder acts like a proxy to instance implementation.
 -- Any type that is an instance of this class is automatically compatible.
@@ -413,6 +433,20 @@ key t (Decoder d) = Decoder $ \case
   Object v -> d =<< v .: t
   val      -> typeMismatch "Object" val
 {-# INLINE key #-}
+
+-- | Same as 'key' but works with omitted attributes in payloads and produces parsed values in the context of 'Maybe'.
+--   Note that this combinator behaves differently to a combination of 'maybe' and 'key', which produce error if
+--   the attribute is missing from the json object.
+-- >>> decode (maybeKey "data" int) "{}"
+-- Just Nothing
+--
+--- >>> decode (maybeKey "data" int) "{\"data\": 42}"
+-- Just (Just 42)
+maybeKey :: Key -> Decoder a -> Decoder (Maybe a)
+maybeKey t (Decoder d) = Decoder $ \case
+  Object v -> (v .:? t) >>= Prelude.maybe (pure Nothing) (fmap Just . d)
+  val      -> typeMismatch "Object" val
+{-# INLINE maybeKey #-}
 
 
 -- | Extract JSON value from JSON object keys
@@ -770,14 +804,14 @@ decode' (Decoder d) =
 -- | Like 'decode' but returns an error message when decoding fails.
 eitherDecode :: Decoder a -> LB.ByteString -> Either String a
 eitherDecode (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF (iparse d)
 {-# INLINE eitherDecode #-}
 
 
 -- | Like 'decode'' but returns an error message when decoding fails.
 eitherDecode' :: Decoder a -> LB.ByteString -> Either String a
 eitherDecode' (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeWith ParserI.jsonEOF' (iparse d)
 {-# INLINE eitherDecode' #-}
 
 
@@ -817,14 +851,14 @@ decodeStrict' (Decoder d) =
 -- | Like 'decodeStrict' but returns an error message when decoding fails.
 eitherDecodeStrict :: Decoder a -> B.ByteString -> Either String a
 eitherDecodeStrict (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF (iparse d)
 {-# INLINE eitherDecodeStrict #-}
 
 
 -- | Like 'decodeStrict'' but returns an error message when decoding fails.
 eitherDecodeStrict' :: Decoder a -> B.ByteString -> Either String a
 eitherDecodeStrict' (Decoder d) =
-  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (AI.iparse d)
+  eitherFormatError . Parser.eitherDecodeStrictWith ParserI.jsonEOF' (iparse d)
 {-# INLINE eitherDecodeStrict' #-}
 
 
@@ -896,7 +930,7 @@ parseEither (Decoder f) = ATypes.parseEither f
 
 
 eitherFormatError :: Either (JSONPath, String) a -> Either String a
-eitherFormatError = Prelude.either (Left . uncurry AI.formatError) Right
+eitherFormatError = Prelude.either (Left . uncurry formatError) Right
 {-# INLINE eitherFormatError #-}
 
 
